@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/kelindar/ecs"
 	"github.com/stretchr/testify/assert"
 	"github.com/vmihailenco/msgpack"
 )
@@ -14,7 +13,7 @@ func Test_Generic(t *testing.T) {
 	assert.NotNil(t, arr)
 
 	for i := 0; i < 150; i++ {
-		arr.Add(ecs.NewEntity(), "zero")
+		arr.Add("zero")
 	}
 
 	count := 0
@@ -50,8 +49,7 @@ func Test_Page(t *testing.T) {
 // Benchmark_Component/add-8         	      10	 108778350 ns/op	79380153 B/op	 2000019 allocs/op
 // Benchmark_Component/view-8        	     880	   1398878 ns/op	       0 B/op	       0 allocs/op
 // Benchmark_Component/update-8      	     897	   1372576 ns/op	       0 B/op	       0 allocs/op
-// Benchmark_Component/encode-8      	      13	  81873846 ns/op	27158791 B/op	   15648 allocs/op
-// Benchmark_Component/decode-8      	      12	  93593267 ns/op	16655920 B/op	      17 allocs/op
+// Benchmark_Component/at-8          	      40	  29211575 ns/op	       0 B/op	       0 allocs/op
 func Benchmark_Component(b *testing.B) {
 	const size = 1000000
 
@@ -61,14 +59,14 @@ func Benchmark_Component(b *testing.B) {
 		for n := 0; n < b.N; n++ {
 			array := NewPoolOfInt64()
 			for i := 0; i < size; i++ {
-				array.Add(ecs.NewEntity(), 1)
+				array.Add(1)
 			}
 		}
 	})
 
 	array := NewPoolOfInt64()
 	for i := 0; i < size; i++ {
-		array.Add(ecs.NewEntity(), 1)
+		array.Add(1)
 	}
 
 	b.Run("view", func(b *testing.B) {
@@ -92,6 +90,25 @@ func Benchmark_Component(b *testing.B) {
 			})
 		}
 	})
+
+	b.Run("at", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for n := 0; n < b.N; n++ {
+			for i := 0; i < size; i++ {
+				array.ViewAt(i)
+			}
+		}
+	})
+
+}
+
+func Benchmark_Codec(b *testing.B) {
+	const size = 1000000
+	array := NewPoolOfInt64()
+	for i := 0; i < size; i++ {
+		array.Add(1)
+	}
 
 	b.Run("encode", func(b *testing.B) {
 		b.ReportAllocs()

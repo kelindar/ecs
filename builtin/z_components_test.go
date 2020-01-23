@@ -12,7 +12,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kelindar/ecs"
 	"github.com/stretchr/testify/assert"
 	"github.com/vmihailenco/msgpack"
 )
@@ -20,13 +19,10 @@ import (
 func Test_PoolOfFloat32(t *testing.T) {
 	arr := NewPoolOfFloat32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(float32(123))
+	index2 := arr.Add(float32(123))
 
 	{
 		count := 0
@@ -36,8 +32,14 @@ func Test_PoolOfFloat32(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, float32(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *float32) {
+		*v = 888
+	})
+	assert.Equal(t, float32(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -69,13 +71,10 @@ func Test_CodecOfFloat32(t *testing.T) {
 func Test_PoolOfFloat64(t *testing.T) {
 	arr := NewPoolOfFloat64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(float64(123))
+	index2 := arr.Add(float64(123))
 
 	{
 		count := 0
@@ -85,8 +84,14 @@ func Test_PoolOfFloat64(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, float64(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *float64) {
+		*v = 888
+	})
+	assert.Equal(t, float64(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -118,13 +123,10 @@ func Test_CodecOfFloat64(t *testing.T) {
 func Test_PoolOfInt16(t *testing.T) {
 	arr := NewPoolOfInt16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(int16(123))
+	index2 := arr.Add(int16(123))
 
 	{
 		count := 0
@@ -134,8 +136,14 @@ func Test_PoolOfInt16(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, int16(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *int16) {
+		*v = 888
+	})
+	assert.Equal(t, int16(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -167,13 +175,10 @@ func Test_CodecOfInt16(t *testing.T) {
 func Test_PoolOfInt32(t *testing.T) {
 	arr := NewPoolOfInt32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(int32(123))
+	index2 := arr.Add(int32(123))
 
 	{
 		count := 0
@@ -183,8 +188,14 @@ func Test_PoolOfInt32(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, int32(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *int32) {
+		*v = 888
+	})
+	assert.Equal(t, int32(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -216,13 +227,10 @@ func Test_CodecOfInt32(t *testing.T) {
 func Test_PoolOfInt64(t *testing.T) {
 	arr := NewPoolOfInt64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(int64(123))
+	index2 := arr.Add(int64(123))
 
 	{
 		count := 0
@@ -232,8 +240,14 @@ func Test_PoolOfInt64(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, int64(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *int64) {
+		*v = 888
+	})
+	assert.Equal(t, int64(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -265,13 +279,10 @@ func Test_CodecOfInt64(t *testing.T) {
 func Test_PoolOfUint16(t *testing.T) {
 	arr := NewPoolOfUint16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(uint16(123))
+	index2 := arr.Add(uint16(123))
 
 	{
 		count := 0
@@ -281,8 +292,14 @@ func Test_PoolOfUint16(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, uint16(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *uint16) {
+		*v = 888
+	})
+	assert.Equal(t, uint16(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -314,13 +331,10 @@ func Test_CodecOfUint16(t *testing.T) {
 func Test_PoolOfUint32(t *testing.T) {
 	arr := NewPoolOfUint32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(uint32(123))
+	index2 := arr.Add(uint32(123))
 
 	{
 		count := 0
@@ -330,8 +344,14 @@ func Test_PoolOfUint32(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, uint32(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *uint32) {
+		*v = 888
+	})
+	assert.Equal(t, uint32(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0
@@ -363,13 +383,10 @@ func Test_CodecOfUint32(t *testing.T) {
 func Test_PoolOfUint64(t *testing.T) {
 	arr := NewPoolOfUint64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(uint64(123))
+	index2 := arr.Add(uint64(123))
 
 	{
 		count := 0
@@ -379,8 +396,14 @@ func Test_PoolOfUint64(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, uint64(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *uint64) {
+		*v = 888
+	})
+	assert.Equal(t, uint64(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0

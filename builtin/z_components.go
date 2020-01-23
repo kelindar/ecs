@@ -9,343 +9,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/kelindar/ecs"
 	"github.com/vmihailenco/msgpack"
 )
-
-// --------------------------- Component of string ----------------------------
-
-// PoolOfString represents an array of components.
-type PoolOfString struct {
-	sync.RWMutex
-	typ  reflect.Type
-	free []int
-	page []pageOfString
-}
-
-// NewPoolOfString creates an array of components for the specific type.
-func NewPoolOfString() *PoolOfString {
-	const cap = 128
-	c := &PoolOfString{
-		free: make([]int, 0, cap),
-		page: make([]pageOfString, 0, cap),
-	}
-	c.typ = reflect.TypeOf(c)
-	return c
-}
-
-// Type returns the type of the component.
-func (c *PoolOfString) Type() reflect.Type {
-	return c.typ
-}
-
-// Add adds a component to the array. Returns the index in the array which
-// can be used to remove the component from the array.
-func (c *PoolOfString) Add(entity *ecs.Entity, v string) {
-	c.Lock()
-	defer c.Unlock()
-
-	if len(c.free) == 0 {
-		pageAt := len(c.page)
-		c.page = append(c.page, pageOfString{})
-		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
-	}
-
-	// find the free page and append
-	last := len(c.free) - 1
-	pageAt := c.free[last]
-	offset := c.page[pageAt].Add(v)
-	if c.page[pageAt].IsFull() {
-		c.free = c.free[:last]
-	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfString) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
-}
-
-// View iterates over the array but only acquires a read lock. Make sure you do
-// not mutate the state during this iteration as the pointer is given merely for
-// performance reasons.
-func (c *PoolOfString) View(f func(*string)) {
-	c.RLock()
-	defer c.RUnlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// Update ranges over the data in the slice and lets the user update it. This
-// acquires a read-write lock and is safe to update concurrently.
-func (c *PoolOfString) Update(f func(*string)) {
-	c.Lock()
-	defer c.Unlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *PoolOfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.Encode(c.free); err == nil {
-		err = enc.Encode(c.page)
-	}
-	return
-}
-
-// DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *PoolOfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if err = dec.Decode(&c.free); err == nil {
-		err = dec.Decode(&c.page)
-	}
-	return
-}
-
-// ---------------------------- Page of string -----------------------------
-
-// Page represents a page for a particular type.
-type pageOfString struct {
-	full uint64
-	data [64]string
-}
-
-// Add adds an element to the page and returns the offset.
-func (p *pageOfString) Add(v string) (index int) {
-	if p.IsFull() {
-		return -1
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) == 0 {
-			p.full |= (1 << i)
-			p.data[i] = v
-			return i
-		}
-	}
-	return -1
-}
-
-// Del deletes an element at an offset.
-func (p *pageOfString) Del(index int) {
-	p.full &= uint64(^(1 << index))
-}
-
-// IsFull checks whether the page is full or not.
-func (p *pageOfString) IsFull() bool {
-	return p.full == math.MaxUint64
-}
-
-// Range iterates over the page.
-func (p *pageOfString) Range(f func(*string)) {
-	if p.IsFull() {
-		for i := 0; i < 64; i++ {
-			f(&p.data[i])
-		}
-		return
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) > 0 {
-			f(&p.data[i])
-		}
-	}
-}
-
-// Encode encodes the page in message pack format into the writer.
-func (p *pageOfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.EncodeUint64(p.full); err == nil {
-		err = enc.Encode(p.data)
-	}
-	return
-}
-
-// Decode decodes the page from the reader in message pack format.
-func (p *pageOfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if p.full, err = dec.DecodeUint64(); err == nil {
-		err = dec.Decode(&p.data)
-	}
-	return
-}
-
-// --------------------------- Component of bool ----------------------------
-
-// PoolOfBool represents an array of components.
-type PoolOfBool struct {
-	sync.RWMutex
-	typ  reflect.Type
-	free []int
-	page []pageOfBool
-}
-
-// NewPoolOfBool creates an array of components for the specific type.
-func NewPoolOfBool() *PoolOfBool {
-	const cap = 128
-	c := &PoolOfBool{
-		free: make([]int, 0, cap),
-		page: make([]pageOfBool, 0, cap),
-	}
-	c.typ = reflect.TypeOf(c)
-	return c
-}
-
-// Type returns the type of the component.
-func (c *PoolOfBool) Type() reflect.Type {
-	return c.typ
-}
-
-// Add adds a component to the array. Returns the index in the array which
-// can be used to remove the component from the array.
-func (c *PoolOfBool) Add(entity *ecs.Entity, v bool) {
-	c.Lock()
-	defer c.Unlock()
-
-	if len(c.free) == 0 {
-		pageAt := len(c.page)
-		c.page = append(c.page, pageOfBool{})
-		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
-	}
-
-	// find the free page and append
-	last := len(c.free) - 1
-	pageAt := c.free[last]
-	offset := c.page[pageAt].Add(v)
-	if c.page[pageAt].IsFull() {
-		c.free = c.free[:last]
-	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfBool) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
-}
-
-// View iterates over the array but only acquires a read lock. Make sure you do
-// not mutate the state during this iteration as the pointer is given merely for
-// performance reasons.
-func (c *PoolOfBool) View(f func(*bool)) {
-	c.RLock()
-	defer c.RUnlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// Update ranges over the data in the slice and lets the user update it. This
-// acquires a read-write lock and is safe to update concurrently.
-func (c *PoolOfBool) Update(f func(*bool)) {
-	c.Lock()
-	defer c.Unlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *PoolOfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.Encode(c.free); err == nil {
-		err = enc.Encode(c.page)
-	}
-	return
-}
-
-// DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *PoolOfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if err = dec.Decode(&c.free); err == nil {
-		err = dec.Decode(&c.page)
-	}
-	return
-}
-
-// ---------------------------- Page of bool -----------------------------
-
-// Page represents a page for a particular type.
-type pageOfBool struct {
-	full uint64
-	data [64]bool
-}
-
-// Add adds an element to the page and returns the offset.
-func (p *pageOfBool) Add(v bool) (index int) {
-	if p.IsFull() {
-		return -1
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) == 0 {
-			p.full |= (1 << i)
-			p.data[i] = v
-			return i
-		}
-	}
-	return -1
-}
-
-// Del deletes an element at an offset.
-func (p *pageOfBool) Del(index int) {
-	p.full &= uint64(^(1 << index))
-}
-
-// IsFull checks whether the page is full or not.
-func (p *pageOfBool) IsFull() bool {
-	return p.full == math.MaxUint64
-}
-
-// Range iterates over the page.
-func (p *pageOfBool) Range(f func(*bool)) {
-	if p.IsFull() {
-		for i := 0; i < 64; i++ {
-			f(&p.data[i])
-		}
-		return
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) > 0 {
-			f(&p.data[i])
-		}
-	}
-}
-
-// Encode encodes the page in message pack format into the writer.
-func (p *pageOfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.EncodeUint64(p.full); err == nil {
-		err = enc.Encode(p.data)
-	}
-	return
-}
-
-// Decode decodes the page from the reader in message pack format.
-func (p *pageOfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if p.full, err = dec.DecodeUint64(); err == nil {
-		err = dec.Decode(&p.data)
-	}
-	return
-}
 
 // --------------------------- Component of float32 ----------------------------
 
@@ -364,7 +29,7 @@ func NewPoolOfFloat32() *PoolOfFloat32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -375,7 +40,8 @@ func (c *PoolOfFloat32) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfFloat32) Add(entity *ecs.Entity, v float32) {
+func (c *PoolOfFloat32) Add(component interface{}) int {
+	v := component.(float32) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -383,8 +49,8 @@ func (c *PoolOfFloat32) Add(entity *ecs.Entity, v float32) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfFloat32{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -394,21 +60,7 @@ func (c *PoolOfFloat32) Add(entity *ecs.Entity, v float32) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfFloat32) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -430,6 +82,36 @@ func (c *PoolOfFloat32) Update(f func(*float32)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfFloat32) ViewAt(index int) float32 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfFloat32) UpdateAt(index int, f func(*float32)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfFloat32) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -482,6 +164,14 @@ func (p *pageOfFloat32) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfFloat32) At(index int) *float32 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfFloat32) Range(f func(*float32)) {
 	if p.IsFull() {
@@ -531,7 +221,7 @@ func NewPoolOfFloat64() *PoolOfFloat64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -542,7 +232,8 @@ func (c *PoolOfFloat64) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfFloat64) Add(entity *ecs.Entity, v float64) {
+func (c *PoolOfFloat64) Add(component interface{}) int {
+	v := component.(float64) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -550,8 +241,8 @@ func (c *PoolOfFloat64) Add(entity *ecs.Entity, v float64) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfFloat64{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -561,21 +252,7 @@ func (c *PoolOfFloat64) Add(entity *ecs.Entity, v float64) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfFloat64) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -597,6 +274,36 @@ func (c *PoolOfFloat64) Update(f func(*float64)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfFloat64) ViewAt(index int) float64 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfFloat64) UpdateAt(index int, f func(*float64)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfFloat64) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -649,6 +356,14 @@ func (p *pageOfFloat64) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfFloat64) At(index int) *float64 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfFloat64) Range(f func(*float64)) {
 	if p.IsFull() {
@@ -698,7 +413,7 @@ func NewPoolOfInt16() *PoolOfInt16 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt16, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -709,7 +424,8 @@ func (c *PoolOfInt16) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfInt16) Add(entity *ecs.Entity, v int16) {
+func (c *PoolOfInt16) Add(component interface{}) int {
+	v := component.(int16) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -717,8 +433,8 @@ func (c *PoolOfInt16) Add(entity *ecs.Entity, v int16) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt16{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -728,21 +444,7 @@ func (c *PoolOfInt16) Add(entity *ecs.Entity, v int16) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfInt16) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -764,6 +466,36 @@ func (c *PoolOfInt16) Update(f func(*int16)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfInt16) ViewAt(index int) int16 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt16) UpdateAt(index int, f func(*int16)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt16) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -816,6 +548,14 @@ func (p *pageOfInt16) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfInt16) At(index int) *int16 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfInt16) Range(f func(*int16)) {
 	if p.IsFull() {
@@ -865,7 +605,7 @@ func NewPoolOfInt32() *PoolOfInt32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -876,7 +616,8 @@ func (c *PoolOfInt32) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfInt32) Add(entity *ecs.Entity, v int32) {
+func (c *PoolOfInt32) Add(component interface{}) int {
+	v := component.(int32) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -884,8 +625,8 @@ func (c *PoolOfInt32) Add(entity *ecs.Entity, v int32) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt32{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -895,21 +636,7 @@ func (c *PoolOfInt32) Add(entity *ecs.Entity, v int32) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfInt32) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -931,6 +658,36 @@ func (c *PoolOfInt32) Update(f func(*int32)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfInt32) ViewAt(index int) int32 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt32) UpdateAt(index int, f func(*int32)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt32) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -983,6 +740,14 @@ func (p *pageOfInt32) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfInt32) At(index int) *int32 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfInt32) Range(f func(*int32)) {
 	if p.IsFull() {
@@ -1032,7 +797,7 @@ func NewPoolOfInt64() *PoolOfInt64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -1043,7 +808,8 @@ func (c *PoolOfInt64) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfInt64) Add(entity *ecs.Entity, v int64) {
+func (c *PoolOfInt64) Add(component interface{}) int {
+	v := component.(int64) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -1051,8 +817,8 @@ func (c *PoolOfInt64) Add(entity *ecs.Entity, v int64) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt64{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -1062,21 +828,7 @@ func (c *PoolOfInt64) Add(entity *ecs.Entity, v int64) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfInt64) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -1098,6 +850,36 @@ func (c *PoolOfInt64) Update(f func(*int64)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfInt64) ViewAt(index int) int64 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt64) UpdateAt(index int, f func(*int64)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfInt64) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -1150,6 +932,14 @@ func (p *pageOfInt64) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfInt64) At(index int) *int64 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfInt64) Range(f func(*int64)) {
 	if p.IsFull() {
@@ -1199,7 +989,7 @@ func NewPoolOfUint16() *PoolOfUint16 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint16, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -1210,7 +1000,8 @@ func (c *PoolOfUint16) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfUint16) Add(entity *ecs.Entity, v uint16) {
+func (c *PoolOfUint16) Add(component interface{}) int {
+	v := component.(uint16) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -1218,8 +1009,8 @@ func (c *PoolOfUint16) Add(entity *ecs.Entity, v uint16) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint16{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -1229,21 +1020,7 @@ func (c *PoolOfUint16) Add(entity *ecs.Entity, v uint16) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfUint16) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -1265,6 +1042,36 @@ func (c *PoolOfUint16) Update(f func(*uint16)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfUint16) ViewAt(index int) uint16 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint16) UpdateAt(index int, f func(*uint16)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint16) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -1317,6 +1124,14 @@ func (p *pageOfUint16) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfUint16) At(index int) *uint16 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfUint16) Range(f func(*uint16)) {
 	if p.IsFull() {
@@ -1366,7 +1181,7 @@ func NewPoolOfUint32() *PoolOfUint32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -1377,7 +1192,8 @@ func (c *PoolOfUint32) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfUint32) Add(entity *ecs.Entity, v uint32) {
+func (c *PoolOfUint32) Add(component interface{}) int {
+	v := component.(uint32) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -1385,8 +1201,8 @@ func (c *PoolOfUint32) Add(entity *ecs.Entity, v uint32) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint32{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -1396,21 +1212,7 @@ func (c *PoolOfUint32) Add(entity *ecs.Entity, v uint32) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfUint32) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -1432,6 +1234,36 @@ func (c *PoolOfUint32) Update(f func(*uint32)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfUint32) ViewAt(index int) uint32 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint32) UpdateAt(index int, f func(*uint32)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint32) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -1484,6 +1316,14 @@ func (p *pageOfUint32) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
+// At returns a specific component located at the given index.
+func (p *pageOfUint32) At(index int) *uint32 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
+}
+
 // Range iterates over the page.
 func (p *pageOfUint32) Range(f func(*uint32)) {
 	if p.IsFull() {
@@ -1533,7 +1373,7 @@ func NewPoolOfUint64() *PoolOfUint64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -1544,7 +1384,8 @@ func (c *PoolOfUint64) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfUint64) Add(entity *ecs.Entity, v uint64) {
+func (c *PoolOfUint64) Add(component interface{}) int {
+	v := component.(uint64) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -1552,8 +1393,8 @@ func (c *PoolOfUint64) Add(entity *ecs.Entity, v uint64) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint64{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -1563,21 +1404,7 @@ func (c *PoolOfUint64) Add(entity *ecs.Entity, v uint64) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfUint64) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -1599,6 +1426,36 @@ func (c *PoolOfUint64) Update(f func(*uint64)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfUint64) ViewAt(index int) uint64 {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint64) UpdateAt(index int, f func(*uint64)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfUint64) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -1649,6 +1506,14 @@ func (p *pageOfUint64) Del(index int) {
 // IsFull checks whether the page is full or not.
 func (p *pageOfUint64) IsFull() bool {
 	return p.full == math.MaxUint64
+}
+
+// At returns a specific component located at the given index.
+func (p *pageOfUint64) At(index int) *uint64 {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
 }
 
 // Range iterates over the page.

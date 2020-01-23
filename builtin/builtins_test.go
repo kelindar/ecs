@@ -5,12 +5,11 @@ package builtin
 
 import (
 	"bytes"
-	"github.com/vmihailenco/msgpack"
 	"reflect"
 	"testing"
 
-	"github.com/kelindar/ecs"
 	"github.com/stretchr/testify/assert"
+	"github.com/vmihailenco/msgpack"
 )
 
 //go:generate genny -pkg=builtin -in=$GOFILE -out=z_components_test.go gen "TType=float32,float64,int16,int32,int64,uint16,uint32,uint64"
@@ -18,13 +17,10 @@ import (
 func Test_PoolOfTType(t *testing.T) {
 	arr := NewPoolOfTType()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
+	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
 
-	entity1 := ecs.NewEntity()
-	entity2 := ecs.NewEntity()
-
-	arr.Add(entity1, 0)
-	arr.Add(entity2, 0)
+	index1 := arr.Add(TType(123))
+	index2 := arr.Add(TType(123))
 
 	{
 		count := 0
@@ -34,8 +30,14 @@ func Test_PoolOfTType(t *testing.T) {
 		assert.Equal(t, 2, count)
 	}
 
-	entity1.Delete()
-	entity2.Delete()
+	assert.Equal(t, TType(123), arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *TType) {
+		*v = 888
+	})
+	assert.Equal(t, TType(888), arr.ViewAt(index2))
+
+	arr.RemoveAt(index1)
+	arr.RemoveAt(index2)
 
 	{
 		count := 0

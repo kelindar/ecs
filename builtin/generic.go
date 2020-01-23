@@ -6,11 +6,10 @@ import (
 	"sync"
 
 	"github.com/cheekybits/genny/generic"
-	"github.com/kelindar/ecs"
 	"github.com/vmihailenco/msgpack"
 )
 
-//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components.go gen "TType=string,bool,float32,float64,int16,int32,int64,uint16,uint32,uint64"
+//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components.go gen "TType=float32,float64,int16,int32,int64,uint16,uint32,uint64"
 
 // TType is the generic type.
 type TType generic.Type
@@ -32,7 +31,7 @@ func NewPoolOfTType() *PoolOfTType {
 		free: make([]int, 0, cap),
 		page: make([]pageOfTType, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c)
+	c.typ = reflect.TypeOf(c.page).Elem()
 	return c
 }
 
@@ -43,7 +42,8 @@ func (c *PoolOfTType) Type() reflect.Type {
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfTType) Add(entity *ecs.Entity, v TType) {
+func (c *PoolOfTType) Add(component interface{}) int {
+	v := component.(TType) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
 
@@ -51,8 +51,8 @@ func (c *PoolOfTType) Add(entity *ecs.Entity, v TType) {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfTType{})
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
+		offset := c.page[pageAt].Add(v)
+		return (64 * pageAt) + offset
 	}
 
 	// find the free page and append
@@ -62,21 +62,7 @@ func (c *PoolOfTType) Add(entity *ecs.Entity, v TType) {
 	if c.page[pageAt].IsFull() {
 		c.free = c.free[:last]
 	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *PoolOfTType) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
+	return (64 * pageAt) + offset
 }
 
 // View iterates over the array but only acquires a read lock. Make sure you do
@@ -98,6 +84,36 @@ func (c *PoolOfTType) Update(f func(*TType)) {
 	for i := 0; i < len(c.page); i++ {
 		c.page[i].Range(f)
 	}
+}
+
+// ViewAt returns a specific component located at the given index. Read lock
+// is acquired in this operation, use it sparingly.
+func (c *PoolOfTType) ViewAt(index int) TType {
+	pageAt, offset := index/64, index%64
+	c.RLock()
+	defer c.RUnlock()
+	return *(c.page[pageAt].At(offset))
+}
+
+// UpdateAt updates a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfTType) UpdateAt(index int, f func(*TType)) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	f(c.page[pageAt].At(offset))
+	c.Unlock()
+}
+
+// RemoveAt removes a component at a specific location. Write lock is acquired
+// in this operation, use it sparingly.
+func (c *PoolOfTType) RemoveAt(index int) {
+	pageAt, offset := index/64, index%64
+	c.Lock()
+	defer c.Unlock()
+	if c.page[pageAt].IsFull() {
+		c.free = append(c.free, pageAt)
+	}
+	c.page[pageAt].Del(offset)
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
@@ -148,6 +164,14 @@ func (p *pageOfTType) Del(index int) {
 // IsFull checks whether the page is full or not.
 func (p *pageOfTType) IsFull() bool {
 	return p.full == math.MaxUint64
+}
+
+// At returns a specific component located at the given index.
+func (p *pageOfTType) At(index int) *TType {
+	if (p.full & (1 << index)) > 0 {
+		return &p.data[index]
+	}
+	return nil
 }
 
 // Range iterates over the page.
