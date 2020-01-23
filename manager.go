@@ -46,8 +46,8 @@ func NewManager() *Manager {
 
 // --------------------------- Manage Entities ----------------------------
 
-// Attach attaches an entity with the set of components.
-func (m *Manager) Attach(entity *Entity, components ...interface{}) error {
+// AttachEntity attaches an entity with the set of components.
+func (m *Manager) AttachEntity(entity *Entity, components ...interface{}) error {
 	for _, part := range components {
 		typ := reflect.TypeOf(part)
 		pool, ok := m.pools[typ]
@@ -69,8 +69,8 @@ func (m *Manager) Attach(entity *Entity, components ...interface{}) error {
 	return nil
 }
 
-// Detach detaches an entity from the manager and frees the components.
-func (m *Manager) Detach(entity *Entity) {
+// DetachEntity detaches an entity from the manager and frees the components.
+func (m *Manager) DetachEntity(entity *Entity) {
 	for _, h := range entity.parts {
 		h.mem.RemoveAt(h.idx)
 	}
@@ -85,8 +85,8 @@ func (m *Manager) Detach(entity *Entity) {
 
 // ---------------------- Manage Component Pools -------------------------
 
-// RegisterProvider registers one or more component pools to the manager.
-func (m *Manager) RegisterProvider(providers ...Provider) {
+// AttachProvider registers one or more component pools to the manager.
+func (m *Manager) AttachProvider(providers ...Provider) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for _, p := range providers {
@@ -94,8 +94,8 @@ func (m *Manager) RegisterProvider(providers ...Provider) {
 	}
 }
 
-// UnregisterProvider unregisters one or more component pools from the managers
-func (m *Manager) UnregisterProvider(providers ...Provider) {
+// DetachProvider unregisters one or more component pools from the managers
+func (m *Manager) DetachProvider(providers ...Provider) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for _, p := range providers {
@@ -105,8 +105,8 @@ func (m *Manager) UnregisterProvider(providers ...Provider) {
 
 // -------------------------- Manage Systems -----------------------------
 
-// RegisterSystem registers one or more systems to the manager.
-func (m *Manager) RegisterSystem(systems ...System) error {
+// AttachSystem registers one or more systems to the manager.
+func (m *Manager) AttachSystem(systems ...System) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -120,8 +120,8 @@ func (m *Manager) RegisterSystem(systems ...System) error {
 	return nil
 }
 
-// UnregisterSystem unregisters one or more systems from the managers.
-func (m *Manager) UnregisterSystem(systems ...System) error {
+// UnregisterSystem DetachSystem one or more systems from the managers.
+func (m *Manager) DetachSystem(systems ...System) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

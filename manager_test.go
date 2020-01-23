@@ -14,13 +14,14 @@ func TestManager(t *testing.T) {
 	f64 := builtin.NewProviderOfFloat64()
 
 	m := NewManager()
-	m.RegisterProvider(f64)
-	defer m.UnregisterProvider(f64)
+	m.AttachProvider(f64)
+	defer m.DetachProvider(f64)
 
 	e := NewEntity("player", 1)
 
-	err := m.Attach(e, float64(2.0))
+	err := m.AttachEntity(e, float64(2.0))
 	assert.NoError(t, err)
 
-	m.Detach(e)
+	m.DetachEntity(e)
+
 }
