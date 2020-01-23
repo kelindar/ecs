@@ -2,7 +2,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-package component
+package builtin
 
 import (
 	"math"
@@ -15,33 +15,33 @@ import (
 
 // --------------------------- Component of string ----------------------------
 
-// OfString represents an array of components.
-type OfString struct {
+// PoolOfString represents an array of components.
+type PoolOfString struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfString
 }
 
-// ForString creates an array of components for the specific type.
-func ForString() *OfString {
+// NewPoolOfString creates an array of components for the specific type.
+func NewPoolOfString() *PoolOfString {
 	const cap = 128
-	c := &OfString{
+	c := &PoolOfString{
 		free: make([]int, 0, cap),
 		page: make([]pageOfString, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfString) Type() reflect.Type {
+func (c *PoolOfString) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfString) Add(entity *ecs.Entity, v string) {
+func (c *PoolOfString) Add(entity *ecs.Entity, v string) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -64,7 +64,7 @@ func (c *OfString) Add(entity *ecs.Entity, v string) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfString) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfString) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -80,7 +80,7 @@ func (c *OfString) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfString) View(f func(*string)) {
+func (c *PoolOfString) View(f func(*string)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -90,7 +90,7 @@ func (c *OfString) View(f func(*string)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfString) Update(f func(*string)) {
+func (c *PoolOfString) Update(f func(*string)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -99,7 +99,7 @@ func (c *OfString) Update(f func(*string)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -107,7 +107,7 @@ func (c *OfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -182,33 +182,33 @@ func (p *pageOfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of bool ----------------------------
 
-// OfBool represents an array of components.
-type OfBool struct {
+// PoolOfBool represents an array of components.
+type PoolOfBool struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfBool
 }
 
-// ForBool creates an array of components for the specific type.
-func ForBool() *OfBool {
+// NewPoolOfBool creates an array of components for the specific type.
+func NewPoolOfBool() *PoolOfBool {
 	const cap = 128
-	c := &OfBool{
+	c := &PoolOfBool{
 		free: make([]int, 0, cap),
 		page: make([]pageOfBool, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfBool) Type() reflect.Type {
+func (c *PoolOfBool) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfBool) Add(entity *ecs.Entity, v bool) {
+func (c *PoolOfBool) Add(entity *ecs.Entity, v bool) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -231,7 +231,7 @@ func (c *OfBool) Add(entity *ecs.Entity, v bool) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfBool) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfBool) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -247,7 +247,7 @@ func (c *OfBool) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfBool) View(f func(*bool)) {
+func (c *PoolOfBool) View(f func(*bool)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -257,7 +257,7 @@ func (c *OfBool) View(f func(*bool)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfBool) Update(f func(*bool)) {
+func (c *PoolOfBool) Update(f func(*bool)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -266,7 +266,7 @@ func (c *OfBool) Update(f func(*bool)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -274,7 +274,7 @@ func (c *OfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -349,33 +349,33 @@ func (p *pageOfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of float32 ----------------------------
 
-// OfFloat32 represents an array of components.
-type OfFloat32 struct {
+// PoolOfFloat32 represents an array of components.
+type PoolOfFloat32 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfFloat32
 }
 
-// ForFloat32 creates an array of components for the specific type.
-func ForFloat32() *OfFloat32 {
+// NewPoolOfFloat32 creates an array of components for the specific type.
+func NewPoolOfFloat32() *PoolOfFloat32 {
 	const cap = 128
-	c := &OfFloat32{
+	c := &PoolOfFloat32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat32, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfFloat32) Type() reflect.Type {
+func (c *PoolOfFloat32) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfFloat32) Add(entity *ecs.Entity, v float32) {
+func (c *PoolOfFloat32) Add(entity *ecs.Entity, v float32) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -398,7 +398,7 @@ func (c *OfFloat32) Add(entity *ecs.Entity, v float32) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfFloat32) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfFloat32) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -414,7 +414,7 @@ func (c *OfFloat32) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfFloat32) View(f func(*float32)) {
+func (c *PoolOfFloat32) View(f func(*float32)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -424,7 +424,7 @@ func (c *OfFloat32) View(f func(*float32)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfFloat32) Update(f func(*float32)) {
+func (c *PoolOfFloat32) Update(f func(*float32)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -433,7 +433,7 @@ func (c *OfFloat32) Update(f func(*float32)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfFloat32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfFloat32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -441,7 +441,7 @@ func (c *OfFloat32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -516,33 +516,33 @@ func (p *pageOfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of float64 ----------------------------
 
-// OfFloat64 represents an array of components.
-type OfFloat64 struct {
+// PoolOfFloat64 represents an array of components.
+type PoolOfFloat64 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfFloat64
 }
 
-// ForFloat64 creates an array of components for the specific type.
-func ForFloat64() *OfFloat64 {
+// NewPoolOfFloat64 creates an array of components for the specific type.
+func NewPoolOfFloat64() *PoolOfFloat64 {
 	const cap = 128
-	c := &OfFloat64{
+	c := &PoolOfFloat64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat64, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfFloat64) Type() reflect.Type {
+func (c *PoolOfFloat64) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfFloat64) Add(entity *ecs.Entity, v float64) {
+func (c *PoolOfFloat64) Add(entity *ecs.Entity, v float64) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -565,7 +565,7 @@ func (c *OfFloat64) Add(entity *ecs.Entity, v float64) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfFloat64) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfFloat64) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -581,7 +581,7 @@ func (c *OfFloat64) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfFloat64) View(f func(*float64)) {
+func (c *PoolOfFloat64) View(f func(*float64)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -591,7 +591,7 @@ func (c *OfFloat64) View(f func(*float64)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfFloat64) Update(f func(*float64)) {
+func (c *PoolOfFloat64) Update(f func(*float64)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -600,7 +600,7 @@ func (c *OfFloat64) Update(f func(*float64)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfFloat64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfFloat64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -608,7 +608,7 @@ func (c *OfFloat64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -683,33 +683,33 @@ func (p *pageOfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of int16 ----------------------------
 
-// OfInt16 represents an array of components.
-type OfInt16 struct {
+// PoolOfInt16 represents an array of components.
+type PoolOfInt16 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfInt16
 }
 
-// ForInt16 creates an array of components for the specific type.
-func ForInt16() *OfInt16 {
+// NewPoolOfInt16 creates an array of components for the specific type.
+func NewPoolOfInt16() *PoolOfInt16 {
 	const cap = 128
-	c := &OfInt16{
+	c := &PoolOfInt16{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt16, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfInt16) Type() reflect.Type {
+func (c *PoolOfInt16) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfInt16) Add(entity *ecs.Entity, v int16) {
+func (c *PoolOfInt16) Add(entity *ecs.Entity, v int16) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -732,7 +732,7 @@ func (c *OfInt16) Add(entity *ecs.Entity, v int16) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfInt16) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfInt16) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -748,7 +748,7 @@ func (c *OfInt16) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfInt16) View(f func(*int16)) {
+func (c *PoolOfInt16) View(f func(*int16)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -758,7 +758,7 @@ func (c *OfInt16) View(f func(*int16)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfInt16) Update(f func(*int16)) {
+func (c *PoolOfInt16) Update(f func(*int16)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -767,7 +767,7 @@ func (c *OfInt16) Update(f func(*int16)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfInt16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfInt16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -775,7 +775,7 @@ func (c *OfInt16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -850,33 +850,33 @@ func (p *pageOfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of int32 ----------------------------
 
-// OfInt32 represents an array of components.
-type OfInt32 struct {
+// PoolOfInt32 represents an array of components.
+type PoolOfInt32 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfInt32
 }
 
-// ForInt32 creates an array of components for the specific type.
-func ForInt32() *OfInt32 {
+// NewPoolOfInt32 creates an array of components for the specific type.
+func NewPoolOfInt32() *PoolOfInt32 {
 	const cap = 128
-	c := &OfInt32{
+	c := &PoolOfInt32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt32, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfInt32) Type() reflect.Type {
+func (c *PoolOfInt32) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfInt32) Add(entity *ecs.Entity, v int32) {
+func (c *PoolOfInt32) Add(entity *ecs.Entity, v int32) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -899,7 +899,7 @@ func (c *OfInt32) Add(entity *ecs.Entity, v int32) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfInt32) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfInt32) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -915,7 +915,7 @@ func (c *OfInt32) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfInt32) View(f func(*int32)) {
+func (c *PoolOfInt32) View(f func(*int32)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -925,7 +925,7 @@ func (c *OfInt32) View(f func(*int32)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfInt32) Update(f func(*int32)) {
+func (c *PoolOfInt32) Update(f func(*int32)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -934,7 +934,7 @@ func (c *OfInt32) Update(f func(*int32)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfInt32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfInt32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -942,7 +942,7 @@ func (c *OfInt32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -1017,33 +1017,33 @@ func (p *pageOfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of int64 ----------------------------
 
-// OfInt64 represents an array of components.
-type OfInt64 struct {
+// PoolOfInt64 represents an array of components.
+type PoolOfInt64 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfInt64
 }
 
-// ForInt64 creates an array of components for the specific type.
-func ForInt64() *OfInt64 {
+// NewPoolOfInt64 creates an array of components for the specific type.
+func NewPoolOfInt64() *PoolOfInt64 {
 	const cap = 128
-	c := &OfInt64{
+	c := &PoolOfInt64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt64, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfInt64) Type() reflect.Type {
+func (c *PoolOfInt64) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfInt64) Add(entity *ecs.Entity, v int64) {
+func (c *PoolOfInt64) Add(entity *ecs.Entity, v int64) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -1066,7 +1066,7 @@ func (c *OfInt64) Add(entity *ecs.Entity, v int64) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfInt64) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfInt64) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -1082,7 +1082,7 @@ func (c *OfInt64) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfInt64) View(f func(*int64)) {
+func (c *PoolOfInt64) View(f func(*int64)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1092,7 +1092,7 @@ func (c *OfInt64) View(f func(*int64)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfInt64) Update(f func(*int64)) {
+func (c *PoolOfInt64) Update(f func(*int64)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1101,7 +1101,7 @@ func (c *OfInt64) Update(f func(*int64)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfInt64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfInt64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -1109,7 +1109,7 @@ func (c *OfInt64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -1184,33 +1184,33 @@ func (p *pageOfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of uint16 ----------------------------
 
-// OfUint16 represents an array of components.
-type OfUint16 struct {
+// PoolOfUint16 represents an array of components.
+type PoolOfUint16 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfUint16
 }
 
-// ForUint16 creates an array of components for the specific type.
-func ForUint16() *OfUint16 {
+// NewPoolOfUint16 creates an array of components for the specific type.
+func NewPoolOfUint16() *PoolOfUint16 {
 	const cap = 128
-	c := &OfUint16{
+	c := &PoolOfUint16{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint16, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfUint16) Type() reflect.Type {
+func (c *PoolOfUint16) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfUint16) Add(entity *ecs.Entity, v uint16) {
+func (c *PoolOfUint16) Add(entity *ecs.Entity, v uint16) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -1233,7 +1233,7 @@ func (c *OfUint16) Add(entity *ecs.Entity, v uint16) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfUint16) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfUint16) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -1249,7 +1249,7 @@ func (c *OfUint16) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfUint16) View(f func(*uint16)) {
+func (c *PoolOfUint16) View(f func(*uint16)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1259,7 +1259,7 @@ func (c *OfUint16) View(f func(*uint16)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfUint16) Update(f func(*uint16)) {
+func (c *PoolOfUint16) Update(f func(*uint16)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1268,7 +1268,7 @@ func (c *OfUint16) Update(f func(*uint16)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfUint16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfUint16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -1276,7 +1276,7 @@ func (c *OfUint16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -1351,33 +1351,33 @@ func (p *pageOfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of uint32 ----------------------------
 
-// OfUint32 represents an array of components.
-type OfUint32 struct {
+// PoolOfUint32 represents an array of components.
+type PoolOfUint32 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfUint32
 }
 
-// ForUint32 creates an array of components for the specific type.
-func ForUint32() *OfUint32 {
+// NewPoolOfUint32 creates an array of components for the specific type.
+func NewPoolOfUint32() *PoolOfUint32 {
 	const cap = 128
-	c := &OfUint32{
+	c := &PoolOfUint32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint32, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfUint32) Type() reflect.Type {
+func (c *PoolOfUint32) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfUint32) Add(entity *ecs.Entity, v uint32) {
+func (c *PoolOfUint32) Add(entity *ecs.Entity, v uint32) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -1400,7 +1400,7 @@ func (c *OfUint32) Add(entity *ecs.Entity, v uint32) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfUint32) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfUint32) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -1416,7 +1416,7 @@ func (c *OfUint32) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfUint32) View(f func(*uint32)) {
+func (c *PoolOfUint32) View(f func(*uint32)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1426,7 +1426,7 @@ func (c *OfUint32) View(f func(*uint32)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfUint32) Update(f func(*uint32)) {
+func (c *PoolOfUint32) Update(f func(*uint32)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1435,7 +1435,7 @@ func (c *OfUint32) Update(f func(*uint32)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfUint32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfUint32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -1443,7 +1443,7 @@ func (c *OfUint32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -1518,33 +1518,33 @@ func (p *pageOfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of uint64 ----------------------------
 
-// OfUint64 represents an array of components.
-type OfUint64 struct {
+// PoolOfUint64 represents an array of components.
+type PoolOfUint64 struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfUint64
 }
 
-// ForUint64 creates an array of components for the specific type.
-func ForUint64() *OfUint64 {
+// NewPoolOfUint64 creates an array of components for the specific type.
+func NewPoolOfUint64() *PoolOfUint64 {
 	const cap = 128
-	c := &OfUint64{
+	c := &PoolOfUint64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint64, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfUint64) Type() reflect.Type {
+func (c *PoolOfUint64) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfUint64) Add(entity *ecs.Entity, v uint64) {
+func (c *PoolOfUint64) Add(entity *ecs.Entity, v uint64) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -1567,7 +1567,7 @@ func (c *OfUint64) Add(entity *ecs.Entity, v uint64) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfUint64) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfUint64) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -1583,7 +1583,7 @@ func (c *OfUint64) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfUint64) View(f func(*uint64)) {
+func (c *PoolOfUint64) View(f func(*uint64)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1593,7 +1593,7 @@ func (c *OfUint64) View(f func(*uint64)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfUint64) Update(f func(*uint64)) {
+func (c *PoolOfUint64) Update(f func(*uint64)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -1602,7 +1602,7 @@ func (c *OfUint64) Update(f func(*uint64)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -1610,7 +1610,7 @@ func (c *OfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfUint64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfUint64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
@@ -1677,340 +1677,6 @@ func (p *pageOfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 
 // Decode decodes the page from the reader in message pack format.
 func (p *pageOfUint64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if p.full, err = dec.DecodeUint64(); err == nil {
-		err = dec.Decode(&p.data)
-	}
-	return
-}
-
-// --------------------------- Component of Vector2 ----------------------------
-
-// OfVector2 represents an array of components.
-type OfVector2 struct {
-	sync.RWMutex
-	typ  relfect.Type
-	free []int
-	page []pageOfVector2
-}
-
-// ForVector2 creates an array of components for the specific type.
-func ForVector2() *OfVector2 {
-	const cap = 128
-	c := &OfVector2{
-		free: make([]int, 0, cap),
-		page: make([]pageOfVector2, 0, cap),
-	}
-	c.typ = relfect.TypeOf(c)
-	return c
-}
-
-// Type returns the type of the component.
-func (c *OfVector2) Type() reflect.Type {
-	return c.typ
-}
-
-// Add adds a component to the array. Returns the index in the array which
-// can be used to remove the component from the array.
-func (c *OfVector2) Add(entity *ecs.Entity, v Vector2) {
-	c.Lock()
-	defer c.Unlock()
-
-	if len(c.free) == 0 {
-		pageAt := len(c.page)
-		c.page = append(c.page, pageOfVector2{})
-		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
-	}
-
-	// find the free page and append
-	last := len(c.free) - 1
-	pageAt := c.free[last]
-	offset := c.page[pageAt].Add(v)
-	if c.page[pageAt].IsFull() {
-		c.free = c.free[:last]
-	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *OfVector2) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
-}
-
-// View iterates over the array but only acquires a read lock. Make sure you do
-// not mutate the state during this iteration as the pointer is given merely for
-// performance reasons.
-func (c *OfVector2) View(f func(*Vector2)) {
-	c.RLock()
-	defer c.RUnlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// Update ranges over the data in the slice and lets the user update it. This
-// acquires a read-write lock and is safe to update concurrently.
-func (c *OfVector2) Update(f func(*Vector2)) {
-	c.Lock()
-	defer c.Unlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfVector2) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.Encode(c.free); err == nil {
-		err = enc.Encode(c.page)
-	}
-	return
-}
-
-// DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfVector2) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if err = dec.Decode(&c.free); err == nil {
-		err = dec.Decode(&c.page)
-	}
-	return
-}
-
-// ---------------------------- Page of Vector2 -----------------------------
-
-// Page represents a page for a particular type.
-type pageOfVector2 struct {
-	full uint64
-	data [64]Vector2
-}
-
-// Add adds an element to the page and returns the offset.
-func (p *pageOfVector2) Add(v Vector2) (index int) {
-	if p.IsFull() {
-		return -1
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) == 0 {
-			p.full |= (1 << i)
-			p.data[i] = v
-			return i
-		}
-	}
-	return -1
-}
-
-// Del deletes an element at an offset.
-func (p *pageOfVector2) Del(index int) {
-	p.full &= uint64(^(1 << index))
-}
-
-// IsFull checks whether the page is full or not.
-func (p *pageOfVector2) IsFull() bool {
-	return p.full == math.MaxUint64
-}
-
-// Range iterates over the page.
-func (p *pageOfVector2) Range(f func(*Vector2)) {
-	if p.IsFull() {
-		for i := 0; i < 64; i++ {
-			f(&p.data[i])
-		}
-		return
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) > 0 {
-			f(&p.data[i])
-		}
-	}
-}
-
-// Encode encodes the page in message pack format into the writer.
-func (p *pageOfVector2) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.EncodeUint64(p.full); err == nil {
-		err = enc.Encode(p.data)
-	}
-	return
-}
-
-// Decode decodes the page from the reader in message pack format.
-func (p *pageOfVector2) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if p.full, err = dec.DecodeUint64(); err == nil {
-		err = dec.Decode(&p.data)
-	}
-	return
-}
-
-// --------------------------- Component of Vector3 ----------------------------
-
-// OfVector3 represents an array of components.
-type OfVector3 struct {
-	sync.RWMutex
-	typ  relfect.Type
-	free []int
-	page []pageOfVector3
-}
-
-// ForVector3 creates an array of components for the specific type.
-func ForVector3() *OfVector3 {
-	const cap = 128
-	c := &OfVector3{
-		free: make([]int, 0, cap),
-		page: make([]pageOfVector3, 0, cap),
-	}
-	c.typ = relfect.TypeOf(c)
-	return c
-}
-
-// Type returns the type of the component.
-func (c *OfVector3) Type() reflect.Type {
-	return c.typ
-}
-
-// Add adds a component to the array. Returns the index in the array which
-// can be used to remove the component from the array.
-func (c *OfVector3) Add(entity *ecs.Entity, v Vector3) {
-	c.Lock()
-	defer c.Unlock()
-
-	if len(c.free) == 0 {
-		pageAt := len(c.page)
-		c.page = append(c.page, pageOfVector3{})
-		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, c.page[pageAt].Add(v))
-		return
-	}
-
-	// find the free page and append
-	last := len(c.free) - 1
-	pageAt := c.free[last]
-	offset := c.page[pageAt].Add(v)
-	if c.page[pageAt].IsFull() {
-		c.free = c.free[:last]
-	}
-	c.attach(entity, pageAt, offset)
-}
-
-// attach attaches the remove function to the entity.
-func (c *OfVector3) attach(entity *ecs.Entity, pageAt, offset int) {
-	index := (64 * pageAt) + offset
-	entity.Attach(func() {
-		c.Lock()
-		defer c.Unlock()
-		pageAt, offset := index/64, index%64
-		if c.page[pageAt].IsFull() {
-			c.free = append(c.free, pageAt)
-		}
-		c.page[pageAt].Del(offset)
-	})
-}
-
-// View iterates over the array but only acquires a read lock. Make sure you do
-// not mutate the state during this iteration as the pointer is given merely for
-// performance reasons.
-func (c *OfVector3) View(f func(*Vector3)) {
-	c.RLock()
-	defer c.RUnlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// Update ranges over the data in the slice and lets the user update it. This
-// acquires a read-write lock and is safe to update concurrently.
-func (c *OfVector3) Update(f func(*Vector3)) {
-	c.Lock()
-	defer c.Unlock()
-	for i := 0; i < len(c.page); i++ {
-		c.page[i].Range(f)
-	}
-}
-
-// EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfVector3) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.Encode(c.free); err == nil {
-		err = enc.Encode(c.page)
-	}
-	return
-}
-
-// DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfVector3) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
-	if err = dec.Decode(&c.free); err == nil {
-		err = dec.Decode(&c.page)
-	}
-	return
-}
-
-// ---------------------------- Page of Vector3 -----------------------------
-
-// Page represents a page for a particular type.
-type pageOfVector3 struct {
-	full uint64
-	data [64]Vector3
-}
-
-// Add adds an element to the page and returns the offset.
-func (p *pageOfVector3) Add(v Vector3) (index int) {
-	if p.IsFull() {
-		return -1
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) == 0 {
-			p.full |= (1 << i)
-			p.data[i] = v
-			return i
-		}
-	}
-	return -1
-}
-
-// Del deletes an element at an offset.
-func (p *pageOfVector3) Del(index int) {
-	p.full &= uint64(^(1 << index))
-}
-
-// IsFull checks whether the page is full or not.
-func (p *pageOfVector3) IsFull() bool {
-	return p.full == math.MaxUint64
-}
-
-// Range iterates over the page.
-func (p *pageOfVector3) Range(f func(*Vector3)) {
-	if p.IsFull() {
-		for i := 0; i < 64; i++ {
-			f(&p.data[i])
-		}
-		return
-	}
-
-	for i := 0; i < 64; i++ {
-		if (p.full & (1 << i)) > 0 {
-			f(&p.data[i])
-		}
-	}
-}
-
-// Encode encodes the page in message pack format into the writer.
-func (p *pageOfVector3) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
-	if err = enc.EncodeUint64(p.full); err == nil {
-		err = enc.Encode(p.data)
-	}
-	return
-}
-
-// Decode decodes the page from the reader in message pack format.
-func (p *pageOfVector3) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if p.full, err = dec.DecodeUint64(); err == nil {
 		err = dec.Decode(&p.data)
 	}

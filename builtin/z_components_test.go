@@ -5,18 +5,22 @@
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-package component
+package builtin
 
 import (
+	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/kelindar/ecs"
 	"github.com/stretchr/testify/assert"
+	"github.com/vmihailenco/msgpack"
 )
 
-func Test_Float32(t *testing.T) {
-	arr := ForFloat32()
+func Test_PoolOfFloat32(t *testing.T) {
+	arr := NewPoolOfFloat32()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -44,12 +48,28 @@ func Test_Float32(t *testing.T) {
 	}
 }
 
+func Test_CodecOfFloat32(t *testing.T) {
+	original := NewPoolOfFloat32()
+	decoded := NewPoolOfFloat32()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Float64(t *testing.T) {
-	arr := ForFloat64()
+func Test_PoolOfFloat64(t *testing.T) {
+	arr := NewPoolOfFloat64()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -77,12 +97,28 @@ func Test_Float64(t *testing.T) {
 	}
 }
 
+func Test_CodecOfFloat64(t *testing.T) {
+	original := NewPoolOfFloat64()
+	decoded := NewPoolOfFloat64()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Int16(t *testing.T) {
-	arr := ForInt16()
+func Test_PoolOfInt16(t *testing.T) {
+	arr := NewPoolOfInt16()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -110,12 +146,28 @@ func Test_Int16(t *testing.T) {
 	}
 }
 
+func Test_CodecOfInt16(t *testing.T) {
+	original := NewPoolOfInt16()
+	decoded := NewPoolOfInt16()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Int32(t *testing.T) {
-	arr := ForInt32()
+func Test_PoolOfInt32(t *testing.T) {
+	arr := NewPoolOfInt32()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -143,12 +195,28 @@ func Test_Int32(t *testing.T) {
 	}
 }
 
+func Test_CodecOfInt32(t *testing.T) {
+	original := NewPoolOfInt32()
+	decoded := NewPoolOfInt32()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Int64(t *testing.T) {
-	arr := ForInt64()
+func Test_PoolOfInt64(t *testing.T) {
+	arr := NewPoolOfInt64()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -176,12 +244,28 @@ func Test_Int64(t *testing.T) {
 	}
 }
 
+func Test_CodecOfInt64(t *testing.T) {
+	original := NewPoolOfInt64()
+	decoded := NewPoolOfInt64()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Uint16(t *testing.T) {
-	arr := ForUint16()
+func Test_PoolOfUint16(t *testing.T) {
+	arr := NewPoolOfUint16()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -209,12 +293,28 @@ func Test_Uint16(t *testing.T) {
 	}
 }
 
+func Test_CodecOfUint16(t *testing.T) {
+	original := NewPoolOfUint16()
+	decoded := NewPoolOfUint16()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Uint32(t *testing.T) {
-	arr := ForUint32()
+func Test_PoolOfUint32(t *testing.T) {
+	arr := NewPoolOfUint32()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -242,12 +342,28 @@ func Test_Uint32(t *testing.T) {
 	}
 }
 
+func Test_CodecOfUint32(t *testing.T) {
+	original := NewPoolOfUint32()
+	decoded := NewPoolOfUint32()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
+}
+
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_Uint64(t *testing.T) {
-	arr := ForUint64()
+func Test_PoolOfUint64(t *testing.T) {
+	arr := NewPoolOfUint64()
 	assert.NotNil(t, arr)
+	assert.Equal(t, reflect.TypeOf(arr), arr.Type())
 
 	entity1 := ecs.NewEntity()
 	entity2 := ecs.NewEntity()
@@ -273,4 +389,19 @@ func Test_Uint64(t *testing.T) {
 		})
 		assert.Equal(t, 0, count)
 	}
+}
+
+func Test_CodecOfUint64(t *testing.T) {
+	original := NewPoolOfUint64()
+	decoded := NewPoolOfUint64()
+
+	// Encode the buffer
+	var encoded bytes.Buffer
+	err := msgpack.NewEncoder(&encoded).Encode(original)
+
+	// Decode from the buffer
+	dec := msgpack.NewDecoder(bytes.NewBuffer(encoded.Bytes()))
+	err = dec.Decode(decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, original, decoded)
 }

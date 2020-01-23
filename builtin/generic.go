@@ -1,4 +1,4 @@
-package component
+package builtin
 
 import (
 	"math"
@@ -10,40 +10,40 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-//go:generate genny -in=$GOFILE -out=z_components.go gen "TType=string,bool,float32,float64,int16,int32,int64,uint16,uint32,uint64,Vector2,Vector3"
+//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components.go gen "TType=string,bool,float32,float64,int16,int32,int64,uint16,uint32,uint64"
 
 // TType is the generic type.
 type TType generic.Type
 
 // --------------------------- Component of TType ----------------------------
 
-// OfTType represents an array of components.
-type OfTType struct {
+// PoolOfTType represents an array of components.
+type PoolOfTType struct {
 	sync.RWMutex
-	typ  relfect.Type
+	typ  reflect.Type
 	free []int
 	page []pageOfTType
 }
 
-// ForTType creates an array of components for the specific type.
-func ForTType() *OfTType {
+// NewPoolOfTType creates an array of components for the specific type.
+func NewPoolOfTType() *PoolOfTType {
 	const cap = 128
-	c := &OfTType{
+	c := &PoolOfTType{
 		free: make([]int, 0, cap),
 		page: make([]pageOfTType, 0, cap),
 	}
-	c.typ = relfect.TypeOf(c)
+	c.typ = reflect.TypeOf(c)
 	return c
 }
 
 // Type returns the type of the component.
-func (c *OfTType) Type() reflect.Type {
+func (c *PoolOfTType) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *OfTType) Add(entity *ecs.Entity, v TType) {
+func (c *PoolOfTType) Add(entity *ecs.Entity, v TType) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -66,7 +66,7 @@ func (c *OfTType) Add(entity *ecs.Entity, v TType) {
 }
 
 // attach attaches the remove function to the entity.
-func (c *OfTType) attach(entity *ecs.Entity, pageAt, offset int) {
+func (c *PoolOfTType) attach(entity *ecs.Entity, pageAt, offset int) {
 	index := (64 * pageAt) + offset
 	entity.Attach(func() {
 		c.Lock()
@@ -82,7 +82,7 @@ func (c *OfTType) attach(entity *ecs.Entity, pageAt, offset int) {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *OfTType) View(f func(*TType)) {
+func (c *PoolOfTType) View(f func(*TType)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -92,7 +92,7 @@ func (c *OfTType) View(f func(*TType)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *OfTType) Update(f func(*TType)) {
+func (c *PoolOfTType) Update(f func(*TType)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -101,7 +101,7 @@ func (c *OfTType) Update(f func(*TType)) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *OfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *PoolOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -109,7 +109,7 @@ func (c *OfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *OfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *PoolOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}

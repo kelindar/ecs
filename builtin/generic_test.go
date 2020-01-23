@@ -1,16 +1,16 @@
-package component
+package builtin
 
 import (
 	"bytes"
-	"github.com/vmihailenco/msgpack"
 	"testing"
 
 	"github.com/kelindar/ecs"
 	"github.com/stretchr/testify/assert"
+	"github.com/vmihailenco/msgpack"
 )
 
 func Test_Generic(t *testing.T) {
-	arr := ForTType()
+	arr := NewPoolOfTType()
 	assert.NotNil(t, arr)
 
 	for i := 0; i < 150; i++ {
@@ -59,14 +59,14 @@ func Benchmark_Component(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			array := ForInt64()
+			array := NewPoolOfInt64()
 			for i := 0; i < size; i++ {
 				array.Add(ecs.NewEntity(), 1)
 			}
 		}
 	})
 
-	array := ForInt64()
+	array := NewPoolOfInt64()
 	for i := 0; i < size; i++ {
 		array.Add(ecs.NewEntity(), 1)
 	}
@@ -87,7 +87,7 @@ func Benchmark_Component(b *testing.B) {
 		for n := 0; n < b.N; n++ {
 			x := int64(123)
 			array.Update(func(v *int64) {
-				v = &x
+				*v = x
 				return
 			})
 		}
@@ -114,7 +114,7 @@ func Benchmark_Component(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			arr := ForInt64()
+			arr := NewPoolOfInt64()
 			buf := bytes.NewBuffer(encoded.Bytes())
 			dec := msgpack.NewDecoder(buf)
 			if err := dec.Decode(arr); err != nil {
