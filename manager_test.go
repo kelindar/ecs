@@ -14,10 +14,10 @@ func TestManager(t *testing.T) {
 	f64 := builtin.NewPoolOfFloat64()
 
 	m := NewManager()
-	m.Register(f64)
-	defer m.Unregister(f64)
+	m.AddPool(f64)
+	defer m.RemovePool(f64)
 
-	e := NewEntity(1)
+	e := NewEntity("player", 1)
 
 	err := m.Attach(e, float64(2.0))
 	assert.NoError(t, err)

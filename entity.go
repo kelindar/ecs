@@ -16,14 +16,16 @@ type handle struct {
 // nothing more. It belongs to any amount of Systems, and has a number of
 // Components
 type Entity struct {
-	serial Serial // The identifier of an entity
+	serial Serial // The identifier of the entity
+	group  string // The group name of the entity
 	parts  map[ComponentType]handle
 }
 
 // NewEntity creates a new entity.
-func NewEntity(id Serial) *Entity {
+func NewEntity(group string, id Serial) *Entity {
 	return &Entity{
 		serial: id,
+		group:  group,
 		parts:  make(map[ComponentType]handle, 8),
 	}
 }
@@ -31,4 +33,9 @@ func NewEntity(id Serial) *Entity {
 // ID returns the ID of the entity.
 func (e *Entity) ID() Serial {
 	return e.serial
+}
+
+// Group returns the group name of the entity.
+func (e *Entity) Group() string {
+	return e.group
 }

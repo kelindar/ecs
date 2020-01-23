@@ -10,7 +10,8 @@ import (
 )
 
 func TestEntity(t *testing.T) {
-	e := NewEntity(1)
+	e := NewEntity("player", 1)
 	assert.NotNil(t, e)
 	assert.Equal(t, Serial(1), e.ID())
+	assert.Equal(t, "player", e.Group())
 }

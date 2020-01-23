@@ -19,38 +19,26 @@ type Pooler interface {
 	RemoveAt(int)
 }
 
+type System interface {
+	Name() string
+	Priority() int
+	Run(*Manager) error
+	Stop() error
+}
+
 // Manager represents a manager of entities, components and systems.
 type Manager struct {
-	lock     sync.RWMutex
-	pool     map[reflect.Type]Pooler
-	entities map[Serial]*Entity
+	events
+	lock  sync.RWMutex
+	pools map[ComponentType]Pooler
+	items map[string]map[Serial]*Entity
 }
 
 // NewManager returns a new manager instance.
 func NewManager() *Manager {
 	return &Manager{
-		pool:     make(map[ComponentType]Pooler),
-		entities: make(map[Serial]*Entity),
-	}
-}
-
-// ---------------------- Manage Component Pools -------------------------
-
-// Register registers one or more component pools to the manager.
-func (m *Manager) Register(pool ...Pooler) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	for _, p := range pool {
-		m.pool[p.Type()] = p
-	}
-}
-
-// Unregister unregisters one or more component pools from the managers
-func (m *Manager) Unregister(pool ...Pooler) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	for _, p := range pool {
-		delete(m.pool, p.Type())
+		pools: make(map[ComponentType]Pooler),
+		items: make(map[string]map[Serial]*Entity),
 	}
 }
 
@@ -60,7 +48,7 @@ func (m *Manager) Unregister(pool ...Pooler) {
 func (m *Manager) Attach(entity *Entity, components ...interface{}) error {
 	for _, part := range components {
 		typ := reflect.TypeOf(part)
-		pool, ok := m.pool[typ]
+		pool, ok := m.pools[typ]
 		if !ok {
 			return fmt.Errorf("type %v is not a valid component", typ.String())
 		}
@@ -69,6 +57,13 @@ func (m *Manager) Attach(entity *Entity, components ...interface{}) error {
 		entity.parts[typ] = handle{pool, pool.Add(part)}
 	}
 
+	// Attach to the registry
+	m.lock.Lock()
+	if _, ok := m.items[entity.group]; !ok {
+		m.items[entity.group] = make(map[Serial]*Entity, 16)
+	}
+	m.items[entity.group][entity.serial] = entity
+	m.lock.Unlock()
 	return nil
 }
 
@@ -76,5 +71,32 @@ func (m *Manager) Attach(entity *Entity, components ...interface{}) error {
 func (m *Manager) Detach(entity *Entity) {
 	for _, h := range entity.parts {
 		h.mem.RemoveAt(h.idx)
+	}
+
+	// Detach from the registry
+	m.lock.Lock()
+	if group, ok := m.items[entity.group]; ok {
+		delete(group, entity.serial)
+	}
+	m.lock.Unlock()
+}
+
+// ---------------------- Manage Component Pools -------------------------
+
+// AddPool registers one or more component pools to the manager.
+func (m *Manager) AddPool(pool ...Pooler) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for _, p := range pool {
+		m.pools[p.Type()] = p
+	}
+}
+
+// RemovePool unregisters one or more component pools from the managers
+func (m *Manager) RemovePool(pool ...Pooler) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for _, p := range pool {
+		delete(m.pools, p.Type())
 	}
 }
