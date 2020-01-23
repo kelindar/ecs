@@ -6,11 +6,21 @@ package ecs
 import (
 	"testing"
 
+	"github.com/kelindar/ecs/builtin"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEntity(t *testing.T) {
+func TestManager(t *testing.T) {
+	f64 := builtin.NewPoolOfFloat64()
+
+	m := NewManager()
+	m.Register(f64)
+	defer m.Unregister(f64)
+
 	e := NewEntity(1)
-	assert.NotNil(t, e)
-	assert.Equal(t, Serial(1), e.ID())
+
+	err := m.Attach(e, float64(2.0))
+	assert.NoError(t, err)
+
+	m.Detach(e)
 }

@@ -31,7 +31,7 @@ func NewPoolOfTType() *PoolOfTType {
 		free: make([]int, 0, cap),
 		page: make([]pageOfTType, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfTType{}.data).Elem()
 	return c
 }
 

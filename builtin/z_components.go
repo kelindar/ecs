@@ -29,7 +29,7 @@ func NewPoolOfFloat32() *PoolOfFloat32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfFloat32{}.data).Elem()
 	return c
 }
 
@@ -221,7 +221,7 @@ func NewPoolOfFloat64() *PoolOfFloat64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfFloat64{}.data).Elem()
 	return c
 }
 
@@ -413,7 +413,7 @@ func NewPoolOfInt16() *PoolOfInt16 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt16, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfInt16{}.data).Elem()
 	return c
 }
 
@@ -605,7 +605,7 @@ func NewPoolOfInt32() *PoolOfInt32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfInt32{}.data).Elem()
 	return c
 }
 
@@ -797,7 +797,7 @@ func NewPoolOfInt64() *PoolOfInt64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfInt64{}.data).Elem()
 	return c
 }
 
@@ -989,7 +989,7 @@ func NewPoolOfUint16() *PoolOfUint16 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint16, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfUint16{}.data).Elem()
 	return c
 }
 
@@ -1181,7 +1181,7 @@ func NewPoolOfUint32() *PoolOfUint32 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint32, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfUint32{}.data).Elem()
 	return c
 }
 
@@ -1373,7 +1373,7 @@ func NewPoolOfUint64() *PoolOfUint64 {
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint64, 0, cap),
 	}
-	c.typ = reflect.TypeOf(c.page).Elem()
+	c.typ = reflect.TypeOf(pageOfUint64{}.data).Elem()
 	return c
 }
 

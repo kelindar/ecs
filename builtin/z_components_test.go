@@ -19,7 +19,7 @@ import (
 func Test_PoolOfFloat32(t *testing.T) {
 	arr := NewPoolOfFloat32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfFloat32{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(float32(123))
 	index2 := arr.Add(float32(123))
@@ -71,7 +71,7 @@ func Test_CodecOfFloat32(t *testing.T) {
 func Test_PoolOfFloat64(t *testing.T) {
 	arr := NewPoolOfFloat64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfFloat64{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(float64(123))
 	index2 := arr.Add(float64(123))
@@ -123,7 +123,7 @@ func Test_CodecOfFloat64(t *testing.T) {
 func Test_PoolOfInt16(t *testing.T) {
 	arr := NewPoolOfInt16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfInt16{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(int16(123))
 	index2 := arr.Add(int16(123))
@@ -175,7 +175,7 @@ func Test_CodecOfInt16(t *testing.T) {
 func Test_PoolOfInt32(t *testing.T) {
 	arr := NewPoolOfInt32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfInt32{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(int32(123))
 	index2 := arr.Add(int32(123))
@@ -227,7 +227,7 @@ func Test_CodecOfInt32(t *testing.T) {
 func Test_PoolOfInt64(t *testing.T) {
 	arr := NewPoolOfInt64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfInt64{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(int64(123))
 	index2 := arr.Add(int64(123))
@@ -279,7 +279,7 @@ func Test_CodecOfInt64(t *testing.T) {
 func Test_PoolOfUint16(t *testing.T) {
 	arr := NewPoolOfUint16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfUint16{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(uint16(123))
 	index2 := arr.Add(uint16(123))
@@ -331,7 +331,7 @@ func Test_CodecOfUint16(t *testing.T) {
 func Test_PoolOfUint32(t *testing.T) {
 	arr := NewPoolOfUint32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfUint32{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(uint32(123))
 	index2 := arr.Add(uint32(123))
@@ -383,7 +383,7 @@ func Test_CodecOfUint32(t *testing.T) {
 func Test_PoolOfUint64(t *testing.T) {
 	arr := NewPoolOfUint64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfUint64{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(uint64(123))
 	index2 := arr.Add(uint64(123))

@@ -17,7 +17,7 @@ import (
 func Test_PoolOfTType(t *testing.T) {
 	arr := NewPoolOfTType()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(arr.page).Elem(), arr.Type())
+	assert.Equal(t, reflect.TypeOf(pageOfTType{}.data).Elem(), arr.Type())
 
 	index1 := arr.Add(TType(123))
 	index2 := arr.Add(TType(123))
