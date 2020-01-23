@@ -1,9 +1,8 @@
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-
 package component
 
 import (
+	"bytes"
+	"github.com/vmihailenco/msgpack"
 	"testing"
 
 	"github.com/kelindar/ecs"
@@ -48,18 +47,21 @@ func Test_Page(t *testing.T) {
 	assert.Equal(t, true, page.IsFull())
 }
 
-// Benchmark_Array/best-case-8         	    5474	    217540 ns/op	       0 B/op	       0 allocs/op
-// Benchmark_Array/array-range-8       	     918	   1321111 ns/op	       0 B/op	       0 allocs/op
-func Benchmark_Array(b *testing.B) {
+// Benchmark_Component/add-8         	      10	 108778350 ns/op	79380153 B/op	 2000019 allocs/op
+// Benchmark_Component/view-8        	     880	   1398878 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/update-8      	     897	   1372576 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/encode-8      	      13	  81873846 ns/op	27158791 B/op	   15648 allocs/op
+// Benchmark_Component/decode-8      	      12	  93593267 ns/op	16655920 B/op	      17 allocs/op
+func Benchmark_Component(b *testing.B) {
 	const size = 1000000
 
-	b.Run("best-case", func(b *testing.B) {
-		v := make([]int64, size)
+	b.Run("add", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
+			array := ForInt64()
 			for i := 0; i < size; i++ {
-				_ = v[i]
+				array.Add(ecs.NewEntity(), 1)
 			}
 		}
 	})
@@ -69,13 +71,55 @@ func Benchmark_Array(b *testing.B) {
 		array.Add(ecs.NewEntity(), 1)
 	}
 
-	b.Run("array-view", func(b *testing.B) {
+	b.Run("view", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
 			array.View(func(v *int64) {
 				return
 			})
+		}
+	})
+
+	b.Run("update", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for n := 0; n < b.N; n++ {
+			x := int64(123)
+			array.Update(func(v *int64) {
+				v = &x
+				return
+			})
+		}
+	})
+
+	b.Run("encode", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for n := 0; n < b.N; n++ {
+			var buf bytes.Buffer
+			enc := msgpack.NewEncoder(&buf)
+			if err := enc.Encode(array); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	var encoded bytes.Buffer
+	if err := msgpack.NewEncoder(&encoded).Encode(array); err != nil {
+		b.Fatal(err)
+	}
+
+	b.Run("decode", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for n := 0; n < b.N; n++ {
+			arr := ForInt64()
+			buf := bytes.NewBuffer(encoded.Bytes())
+			dec := msgpack.NewDecoder(buf)
+			if err := dec.Decode(arr); err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 

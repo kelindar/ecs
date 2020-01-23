@@ -13,7 +13,11 @@ Entities in this system are represented with the `Entity` struct as opposed to a
 
 The components are protected through a generated "component manager" which can be found in `component` package. In order to generate one, I used [genny](https://github.com/cheekybits/genny) which can be used with go generate as well (see `component/generic.go`).
 
-```
-//go:generate genny -in=$GOFILE -out=z_components.go gen "TType="
-```
 
+## Benchmarks
+
+The benchmark results below seem promising. Below are the results of both view and update functions that iterate over 1 million components, resulting in around `1.5ns` per item.  I would encourage you to experiment and help me improve this.
+```
+// Benchmark_Component/view-8         	     790	   1537626 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/update-8       	     775	   1505681 ns/op	       0 B/op	       0 allocs/op
+```

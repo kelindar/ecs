@@ -1,6 +1,3 @@
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-
 package component
 
 import (
@@ -10,6 +7,7 @@ import (
 
 	"github.com/cheekybits/genny/generic"
 	"github.com/kelindar/ecs"
+	"github.com/vmihailenco/msgpack"
 )
 
 //go:generate genny -in=$GOFILE -out=z_components.go gen "TType=string,bool,float32,float64,int16,int32,int64,uint16,uint32,uint64,Vector2,Vector3"
@@ -17,10 +15,12 @@ import (
 // TType is the generic type.
 type TType generic.Type
 
+// --------------------------- Component of TType ----------------------------
+
 // OfTType represents an array of components.
 type OfTType struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfTType
 }
@@ -28,12 +28,17 @@ type OfTType struct {
 // ForTType creates an array of components for the specific type.
 func ForTType() *OfTType {
 	const cap = 128
-	array := &OfTType{
+	c := &OfTType{
 		free: make([]int, 0, cap),
 		page: make([]pageOfTType, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfTType) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -45,9 +50,8 @@ func (c *OfTType) Add(entity *ecs.Entity, v TType) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfTType{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -96,6 +100,24 @@ func (c *OfTType) Update(f func(*TType)) {
 	}
 }
 
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of TType -----------------------------
+
 // Page represents a page for a particular type.
 type pageOfTType struct {
 	full uint64
@@ -142,4 +164,20 @@ func (p *pageOfTType) Range(f func(*TType)) {
 			f(&p.data[i])
 		}
 	}
+}
+
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
 }

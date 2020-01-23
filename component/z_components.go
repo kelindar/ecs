@@ -2,9 +2,6 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-
 package component
 
 import (
@@ -13,12 +10,15 @@ import (
 	"sync"
 
 	"github.com/kelindar/ecs"
+	"github.com/vmihailenco/msgpack"
 )
+
+// --------------------------- Component of string ----------------------------
 
 // OfString represents an array of components.
 type OfString struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfString
 }
@@ -26,12 +26,17 @@ type OfString struct {
 // ForString creates an array of components for the specific type.
 func ForString() *OfString {
 	const cap = 128
-	array := &OfString{
+	c := &OfString{
 		free: make([]int, 0, cap),
 		page: make([]pageOfString, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfString) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -43,9 +48,8 @@ func (c *OfString) Add(entity *ecs.Entity, v string) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfString{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -93,6 +97,24 @@ func (c *OfString) Update(f func(*string)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of string -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfString struct {
@@ -142,13 +164,28 @@ func (p *pageOfString) Range(f func(*string)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfString) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfString) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of bool ----------------------------
 
 // OfBool represents an array of components.
 type OfBool struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfBool
 }
@@ -156,12 +193,17 @@ type OfBool struct {
 // ForBool creates an array of components for the specific type.
 func ForBool() *OfBool {
 	const cap = 128
-	array := &OfBool{
+	c := &OfBool{
 		free: make([]int, 0, cap),
 		page: make([]pageOfBool, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfBool) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -173,9 +215,8 @@ func (c *OfBool) Add(entity *ecs.Entity, v bool) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfBool{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -223,6 +264,24 @@ func (c *OfBool) Update(f func(*bool)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of bool -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfBool struct {
@@ -272,13 +331,28 @@ func (p *pageOfBool) Range(f func(*bool)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfBool) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfBool) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of float32 ----------------------------
 
 // OfFloat32 represents an array of components.
 type OfFloat32 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfFloat32
 }
@@ -286,12 +360,17 @@ type OfFloat32 struct {
 // ForFloat32 creates an array of components for the specific type.
 func ForFloat32() *OfFloat32 {
 	const cap = 128
-	array := &OfFloat32{
+	c := &OfFloat32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat32, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfFloat32) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -303,9 +382,8 @@ func (c *OfFloat32) Add(entity *ecs.Entity, v float32) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfFloat32{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -353,6 +431,24 @@ func (c *OfFloat32) Update(f func(*float32)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfFloat32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of float32 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfFloat32 struct {
@@ -402,13 +498,28 @@ func (p *pageOfFloat32) Range(f func(*float32)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfFloat32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of float64 ----------------------------
 
 // OfFloat64 represents an array of components.
 type OfFloat64 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfFloat64
 }
@@ -416,12 +527,17 @@ type OfFloat64 struct {
 // ForFloat64 creates an array of components for the specific type.
 func ForFloat64() *OfFloat64 {
 	const cap = 128
-	array := &OfFloat64{
+	c := &OfFloat64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfFloat64, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfFloat64) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -433,9 +549,8 @@ func (c *OfFloat64) Add(entity *ecs.Entity, v float64) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfFloat64{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -483,6 +598,24 @@ func (c *OfFloat64) Update(f func(*float64)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfFloat64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of float64 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfFloat64 struct {
@@ -532,13 +665,28 @@ func (p *pageOfFloat64) Range(f func(*float64)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfFloat64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of int16 ----------------------------
 
 // OfInt16 represents an array of components.
 type OfInt16 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfInt16
 }
@@ -546,12 +694,17 @@ type OfInt16 struct {
 // ForInt16 creates an array of components for the specific type.
 func ForInt16() *OfInt16 {
 	const cap = 128
-	array := &OfInt16{
+	c := &OfInt16{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt16, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfInt16) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -563,9 +716,8 @@ func (c *OfInt16) Add(entity *ecs.Entity, v int16) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt16{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -613,6 +765,24 @@ func (c *OfInt16) Update(f func(*int16)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfInt16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of int16 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfInt16 struct {
@@ -662,13 +832,28 @@ func (p *pageOfInt16) Range(f func(*int16)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfInt16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of int32 ----------------------------
 
 // OfInt32 represents an array of components.
 type OfInt32 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfInt32
 }
@@ -676,12 +861,17 @@ type OfInt32 struct {
 // ForInt32 creates an array of components for the specific type.
 func ForInt32() *OfInt32 {
 	const cap = 128
-	array := &OfInt32{
+	c := &OfInt32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt32, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfInt32) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -693,9 +883,8 @@ func (c *OfInt32) Add(entity *ecs.Entity, v int32) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt32{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -743,6 +932,24 @@ func (c *OfInt32) Update(f func(*int32)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfInt32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of int32 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfInt32 struct {
@@ -792,13 +999,28 @@ func (p *pageOfInt32) Range(f func(*int32)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfInt32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of int64 ----------------------------
 
 // OfInt64 represents an array of components.
 type OfInt64 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfInt64
 }
@@ -806,12 +1028,17 @@ type OfInt64 struct {
 // ForInt64 creates an array of components for the specific type.
 func ForInt64() *OfInt64 {
 	const cap = 128
-	array := &OfInt64{
+	c := &OfInt64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfInt64, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfInt64) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -823,9 +1050,8 @@ func (c *OfInt64) Add(entity *ecs.Entity, v int64) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfInt64{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -873,6 +1099,24 @@ func (c *OfInt64) Update(f func(*int64)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfInt64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of int64 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfInt64 struct {
@@ -922,13 +1166,28 @@ func (p *pageOfInt64) Range(f func(*int64)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfInt64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of uint16 ----------------------------
 
 // OfUint16 represents an array of components.
 type OfUint16 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfUint16
 }
@@ -936,12 +1195,17 @@ type OfUint16 struct {
 // ForUint16 creates an array of components for the specific type.
 func ForUint16() *OfUint16 {
 	const cap = 128
-	array := &OfUint16{
+	c := &OfUint16{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint16, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfUint16) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -953,9 +1217,8 @@ func (c *OfUint16) Add(entity *ecs.Entity, v uint16) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint16{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -1003,6 +1266,24 @@ func (c *OfUint16) Update(f func(*uint16)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfUint16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of uint16 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfUint16 struct {
@@ -1052,13 +1333,28 @@ func (p *pageOfUint16) Range(f func(*uint16)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfUint16) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of uint32 ----------------------------
 
 // OfUint32 represents an array of components.
 type OfUint32 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfUint32
 }
@@ -1066,12 +1362,17 @@ type OfUint32 struct {
 // ForUint32 creates an array of components for the specific type.
 func ForUint32() *OfUint32 {
 	const cap = 128
-	array := &OfUint32{
+	c := &OfUint32{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint32, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfUint32) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -1083,9 +1384,8 @@ func (c *OfUint32) Add(entity *ecs.Entity, v uint32) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint32{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -1133,6 +1433,24 @@ func (c *OfUint32) Update(f func(*uint32)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfUint32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of uint32 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfUint32 struct {
@@ -1182,13 +1500,28 @@ func (p *pageOfUint32) Range(f func(*uint32)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfUint32) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of uint64 ----------------------------
 
 // OfUint64 represents an array of components.
 type OfUint64 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfUint64
 }
@@ -1196,12 +1529,17 @@ type OfUint64 struct {
 // ForUint64 creates an array of components for the specific type.
 func ForUint64() *OfUint64 {
 	const cap = 128
-	array := &OfUint64{
+	c := &OfUint64{
 		free: make([]int, 0, cap),
 		page: make([]pageOfUint64, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfUint64) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -1213,9 +1551,8 @@ func (c *OfUint64) Add(entity *ecs.Entity, v uint64) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfUint64{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -1263,6 +1600,24 @@ func (c *OfUint64) Update(f func(*uint64)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfUint64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of uint64 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfUint64 struct {
@@ -1312,13 +1667,28 @@ func (p *pageOfUint64) Range(f func(*uint64)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfUint64) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfUint64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of Vector2 ----------------------------
 
 // OfVector2 represents an array of components.
 type OfVector2 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfVector2
 }
@@ -1326,12 +1696,17 @@ type OfVector2 struct {
 // ForVector2 creates an array of components for the specific type.
 func ForVector2() *OfVector2 {
 	const cap = 128
-	array := &OfVector2{
+	c := &OfVector2{
 		free: make([]int, 0, cap),
 		page: make([]pageOfVector2, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfVector2) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -1343,9 +1718,8 @@ func (c *OfVector2) Add(entity *ecs.Entity, v Vector2) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfVector2{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -1393,6 +1767,24 @@ func (c *OfVector2) Update(f func(*Vector2)) {
 		c.page[i].Range(f)
 	}
 }
+
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfVector2) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfVector2) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of Vector2 -----------------------------
 
 // Page represents a page for a particular type.
 type pageOfVector2 struct {
@@ -1442,13 +1834,28 @@ func (p *pageOfVector2) Range(f func(*Vector2)) {
 	}
 }
 
-// Copyright (c) Roman Atachiants and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfVector2) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfVector2) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
+}
+
+// --------------------------- Component of Vector3 ----------------------------
 
 // OfVector3 represents an array of components.
 type OfVector3 struct {
 	sync.RWMutex
-	typ  reflect.Type
+	typ  relfect.Type
 	free []int
 	page []pageOfVector3
 }
@@ -1456,12 +1863,17 @@ type OfVector3 struct {
 // ForVector3 creates an array of components for the specific type.
 func ForVector3() *OfVector3 {
 	const cap = 128
-	array := &OfVector3{
+	c := &OfVector3{
 		free: make([]int, 0, cap),
 		page: make([]pageOfVector3, 0, cap),
 	}
-	array.typ = reflect.TypeOf(array)
-	return array
+	c.typ = relfect.TypeOf(c)
+	return c
+}
+
+// Type returns the type of the component.
+func (c *OfVector3) Type() reflect.Type {
+	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
@@ -1473,9 +1885,8 @@ func (c *OfVector3) Add(entity *ecs.Entity, v Vector3) {
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
 		c.page = append(c.page, pageOfVector3{})
-		offset := c.page[pageAt].Add(v)
 		c.free = append(c.free, pageAt)
-		c.attach(entity, pageAt, offset)
+		c.attach(entity, pageAt, c.page[pageAt].Add(v))
 		return
 	}
 
@@ -1524,6 +1935,24 @@ func (c *OfVector3) Update(f func(*Vector3)) {
 	}
 }
 
+// EncodeMsgpack encodes the component in message pack format into the writer.
+func (c *OfVector3) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.Encode(c.free); err == nil {
+		err = enc.Encode(c.page)
+	}
+	return
+}
+
+// DecodeMsgpack decodes the page from the reader in message pack format.
+func (c *OfVector3) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if err = dec.Decode(&c.free); err == nil {
+		err = dec.Decode(&c.page)
+	}
+	return
+}
+
+// ---------------------------- Page of Vector3 -----------------------------
+
 // Page represents a page for a particular type.
 type pageOfVector3 struct {
 	full uint64
@@ -1570,4 +1999,20 @@ func (p *pageOfVector3) Range(f func(*Vector3)) {
 			f(&p.data[i])
 		}
 	}
+}
+
+// Encode encodes the page in message pack format into the writer.
+func (p *pageOfVector3) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+	if err = enc.EncodeUint64(p.full); err == nil {
+		err = enc.Encode(p.data)
+	}
+	return
+}
+
+// Decode decodes the page from the reader in message pack format.
+func (p *pageOfVector3) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+	if p.full, err = dec.DecodeUint64(); err == nil {
+		err = dec.Decode(&p.data)
+	}
+	return
 }
