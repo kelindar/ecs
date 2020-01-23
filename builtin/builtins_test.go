@@ -14,8 +14,8 @@ import (
 
 //go:generate genny -pkg=builtin -in=$GOFILE -out=z_components_test.go gen "TType=float32,float64,int16,int32,int64,uint16,uint32,uint64"
 
-func Test_PoolOfTType(t *testing.T) {
-	arr := NewPoolOfTType()
+func Test_ProviderOfTType(t *testing.T) {
+	arr := NewProviderOfTType()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfTType{}.data).Elem(), arr.Type())
 
@@ -49,8 +49,8 @@ func Test_PoolOfTType(t *testing.T) {
 }
 
 func Test_CodecOfTType(t *testing.T) {
-	original := NewPoolOfTType()
-	decoded := NewPoolOfTType()
+	original := NewProviderOfTType()
+	decoded := NewProviderOfTType()
 
 	// Encode the buffer
 	var encoded bytes.Buffer

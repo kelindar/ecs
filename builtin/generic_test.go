@@ -9,7 +9,7 @@ import (
 )
 
 func Test_Generic(t *testing.T) {
-	arr := NewPoolOfTType()
+	arr := NewProviderOfTType()
 	assert.NotNil(t, arr)
 
 	for i := 0; i < 150; i++ {
@@ -57,14 +57,14 @@ func Benchmark_Component(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			array := NewPoolOfInt64()
+			array := NewProviderOfInt64()
 			for i := 0; i < size; i++ {
 				array.Add(1)
 			}
 		}
 	})
 
-	array := NewPoolOfInt64()
+	array := NewProviderOfInt64()
 	for i := 0; i < size; i++ {
 		array.Add(1)
 	}
@@ -105,7 +105,7 @@ func Benchmark_Component(b *testing.B) {
 
 func Benchmark_Codec(b *testing.B) {
 	const size = 1000000
-	array := NewPoolOfInt64()
+	array := NewProviderOfInt64()
 	for i := 0; i < size; i++ {
 		array.Add(1)
 	}
@@ -131,7 +131,7 @@ func Benchmark_Codec(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			arr := NewPoolOfInt64()
+			arr := NewProviderOfInt64()
 			buf := bytes.NewBuffer(encoded.Bytes())
 			dec := msgpack.NewDecoder(buf)
 			if err := dec.Decode(arr); err != nil {

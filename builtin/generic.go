@@ -16,18 +16,18 @@ type TType generic.Type
 
 // --------------------------- Component of TType ----------------------------
 
-// PoolOfTType represents an array of components.
-type PoolOfTType struct {
+// ProviderOfTType represents an array of components.
+type ProviderOfTType struct {
 	sync.RWMutex
 	typ  reflect.Type
 	free []int
 	page []pageOfTType
 }
 
-// NewPoolOfTType creates an array of components for the specific type.
-func NewPoolOfTType() *PoolOfTType {
+// NewProviderOfTType creates an array of components for the specific type.
+func NewProviderOfTType() *ProviderOfTType {
 	const cap = 128
-	c := &PoolOfTType{
+	c := &ProviderOfTType{
 		free: make([]int, 0, cap),
 		page: make([]pageOfTType, 0, cap),
 	}
@@ -36,13 +36,13 @@ func NewPoolOfTType() *PoolOfTType {
 }
 
 // Type returns the type of the component.
-func (c *PoolOfTType) Type() reflect.Type {
+func (c *ProviderOfTType) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *PoolOfTType) Add(component interface{}) int {
+func (c *ProviderOfTType) Add(component interface{}) int {
 	v := component.(TType) // Must be of correct type
 	c.Lock()
 	defer c.Unlock()
@@ -68,7 +68,7 @@ func (c *PoolOfTType) Add(component interface{}) int {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *PoolOfTType) View(f func(*TType)) {
+func (c *ProviderOfTType) View(f func(*TType)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -78,7 +78,7 @@ func (c *PoolOfTType) View(f func(*TType)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *PoolOfTType) Update(f func(*TType)) {
+func (c *ProviderOfTType) Update(f func(*TType)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -88,7 +88,7 @@ func (c *PoolOfTType) Update(f func(*TType)) {
 
 // ViewAt returns a specific component located at the given index. Read lock
 // is acquired in this operation, use it sparingly.
-func (c *PoolOfTType) ViewAt(index int) TType {
+func (c *ProviderOfTType) ViewAt(index int) TType {
 	pageAt, offset := index/64, index%64
 	c.RLock()
 	defer c.RUnlock()
@@ -97,7 +97,7 @@ func (c *PoolOfTType) ViewAt(index int) TType {
 
 // UpdateAt updates a component at a specific location. Write lock is acquired
 // in this operation, use it sparingly.
-func (c *PoolOfTType) UpdateAt(index int, f func(*TType)) {
+func (c *ProviderOfTType) UpdateAt(index int, f func(*TType)) {
 	pageAt, offset := index/64, index%64
 	c.Lock()
 	f(c.page[pageAt].At(offset))
@@ -106,7 +106,7 @@ func (c *PoolOfTType) UpdateAt(index int, f func(*TType)) {
 
 // RemoveAt removes a component at a specific location. Write lock is acquired
 // in this operation, use it sparingly.
-func (c *PoolOfTType) RemoveAt(index int) {
+func (c *ProviderOfTType) RemoveAt(index int) {
 	pageAt, offset := index/64, index%64
 	c.Lock()
 	defer c.Unlock()
@@ -117,7 +117,7 @@ func (c *PoolOfTType) RemoveAt(index int) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *PoolOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *ProviderOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -125,7 +125,7 @@ func (c *PoolOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *PoolOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *ProviderOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}

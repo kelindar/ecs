@@ -16,8 +16,8 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-func Test_PoolOfFloat32(t *testing.T) {
-	arr := NewPoolOfFloat32()
+func Test_ProviderOfFloat32(t *testing.T) {
+	arr := NewProviderOfFloat32()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfFloat32{}.data).Elem(), arr.Type())
 
@@ -51,8 +51,8 @@ func Test_PoolOfFloat32(t *testing.T) {
 }
 
 func Test_CodecOfFloat32(t *testing.T) {
-	original := NewPoolOfFloat32()
-	decoded := NewPoolOfFloat32()
+	original := NewProviderOfFloat32()
+	decoded := NewProviderOfFloat32()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -68,8 +68,8 @@ func Test_CodecOfFloat32(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfFloat64(t *testing.T) {
-	arr := NewPoolOfFloat64()
+func Test_ProviderOfFloat64(t *testing.T) {
+	arr := NewProviderOfFloat64()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfFloat64{}.data).Elem(), arr.Type())
 
@@ -103,8 +103,8 @@ func Test_PoolOfFloat64(t *testing.T) {
 }
 
 func Test_CodecOfFloat64(t *testing.T) {
-	original := NewPoolOfFloat64()
-	decoded := NewPoolOfFloat64()
+	original := NewProviderOfFloat64()
+	decoded := NewProviderOfFloat64()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -120,8 +120,8 @@ func Test_CodecOfFloat64(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfInt16(t *testing.T) {
-	arr := NewPoolOfInt16()
+func Test_ProviderOfInt16(t *testing.T) {
+	arr := NewProviderOfInt16()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfInt16{}.data).Elem(), arr.Type())
 
@@ -155,8 +155,8 @@ func Test_PoolOfInt16(t *testing.T) {
 }
 
 func Test_CodecOfInt16(t *testing.T) {
-	original := NewPoolOfInt16()
-	decoded := NewPoolOfInt16()
+	original := NewProviderOfInt16()
+	decoded := NewProviderOfInt16()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -172,8 +172,8 @@ func Test_CodecOfInt16(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfInt32(t *testing.T) {
-	arr := NewPoolOfInt32()
+func Test_ProviderOfInt32(t *testing.T) {
+	arr := NewProviderOfInt32()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfInt32{}.data).Elem(), arr.Type())
 
@@ -207,8 +207,8 @@ func Test_PoolOfInt32(t *testing.T) {
 }
 
 func Test_CodecOfInt32(t *testing.T) {
-	original := NewPoolOfInt32()
-	decoded := NewPoolOfInt32()
+	original := NewProviderOfInt32()
+	decoded := NewProviderOfInt32()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -224,8 +224,8 @@ func Test_CodecOfInt32(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfInt64(t *testing.T) {
-	arr := NewPoolOfInt64()
+func Test_ProviderOfInt64(t *testing.T) {
+	arr := NewProviderOfInt64()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfInt64{}.data).Elem(), arr.Type())
 
@@ -259,8 +259,8 @@ func Test_PoolOfInt64(t *testing.T) {
 }
 
 func Test_CodecOfInt64(t *testing.T) {
-	original := NewPoolOfInt64()
-	decoded := NewPoolOfInt64()
+	original := NewProviderOfInt64()
+	decoded := NewProviderOfInt64()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -276,8 +276,8 @@ func Test_CodecOfInt64(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfUint16(t *testing.T) {
-	arr := NewPoolOfUint16()
+func Test_ProviderOfUint16(t *testing.T) {
+	arr := NewProviderOfUint16()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfUint16{}.data).Elem(), arr.Type())
 
@@ -311,8 +311,8 @@ func Test_PoolOfUint16(t *testing.T) {
 }
 
 func Test_CodecOfUint16(t *testing.T) {
-	original := NewPoolOfUint16()
-	decoded := NewPoolOfUint16()
+	original := NewProviderOfUint16()
+	decoded := NewProviderOfUint16()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -328,8 +328,8 @@ func Test_CodecOfUint16(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfUint32(t *testing.T) {
-	arr := NewPoolOfUint32()
+func Test_ProviderOfUint32(t *testing.T) {
+	arr := NewProviderOfUint32()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfUint32{}.data).Elem(), arr.Type())
 
@@ -363,8 +363,8 @@ func Test_PoolOfUint32(t *testing.T) {
 }
 
 func Test_CodecOfUint32(t *testing.T) {
-	original := NewPoolOfUint32()
-	decoded := NewPoolOfUint32()
+	original := NewProviderOfUint32()
+	decoded := NewProviderOfUint32()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
@@ -380,8 +380,8 @@ func Test_CodecOfUint32(t *testing.T) {
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-func Test_PoolOfUint64(t *testing.T) {
-	arr := NewPoolOfUint64()
+func Test_ProviderOfUint64(t *testing.T) {
+	arr := NewProviderOfUint64()
 	assert.NotNil(t, arr)
 	assert.Equal(t, reflect.TypeOf(pageOfUint64{}.data).Elem(), arr.Type())
 
@@ -415,8 +415,8 @@ func Test_PoolOfUint64(t *testing.T) {
 }
 
 func Test_CodecOfUint64(t *testing.T) {
-	original := NewPoolOfUint64()
-	decoded := NewPoolOfUint64()
+	original := NewProviderOfUint64()
+	decoded := NewProviderOfUint64()
 
 	// Encode the buffer
 	var encoded bytes.Buffer

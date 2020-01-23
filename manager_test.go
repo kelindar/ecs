@@ -11,11 +11,11 @@ import (
 )
 
 func TestManager(t *testing.T) {
-	f64 := builtin.NewPoolOfFloat64()
+	f64 := builtin.NewProviderOfFloat64()
 
 	m := NewManager()
-	m.AddPool(f64)
-	defer m.RemovePool(f64)
+	m.RegisterProvider(f64)
+	defer m.UnregisterProvider(f64)
 
 	e := NewEntity("player", 1)
 

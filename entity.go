@@ -8,8 +8,8 @@ type Serial uint32
 
 // Handle represents a handle which points to a pool + index combination.
 type handle struct {
-	mem Pooler // The memory pooler for this handle
-	idx int    // The index within the pool
+	mem Provider // The memory pooler for this handle
+	idx int      // The index within the pool
 }
 
 // A Entity is simply a set of components with a unique ID attached to it,
