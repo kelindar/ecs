@@ -30,17 +30,19 @@ type System interface {
 type Manager struct {
 	events
 	lock  sync.RWMutex
+	sys   map[string]System
 	pools map[ComponentType]Provider
-	items map[string]map[Serial]*Entity
-	sys   []System
+	byids map[Serial]*Entity
+	bygrp map[string]map[Serial]*Entity
 }
 
 // NewManager returns a new manager instance.
 func NewManager() *Manager {
 	return &Manager{
-		pools: make(map[ComponentType]Provider),
-		items: make(map[string]map[Serial]*Entity),
-		sys:   make([]System, 0, 8),
+		pools: make(map[ComponentType]Provider, 100),
+		bygrp: make(map[string]map[Serial]*Entity, 100),
+		byids: make(map[Serial]*Entity, 1000000),
+		sys:   make(map[string]System, 16),
 	}
 }
 
@@ -61,10 +63,11 @@ func (m *Manager) AttachEntity(entity *Entity, components ...interface{}) error 
 
 	// Attach to the registry
 	m.lock.Lock()
-	if _, ok := m.items[entity.group]; !ok {
-		m.items[entity.group] = make(map[Serial]*Entity, 16)
+	if _, ok := m.bygrp[entity.group]; !ok {
+		m.bygrp[entity.group] = make(map[Serial]*Entity, 16)
 	}
-	m.items[entity.group][entity.serial] = entity
+	m.bygrp[entity.group][entity.serial] = entity
+	m.byids[entity.serial] = entity
 	m.lock.Unlock()
 	return nil
 }
@@ -77,10 +80,44 @@ func (m *Manager) DetachEntity(entity *Entity) {
 
 	// Detach from the registry
 	m.lock.Lock()
-	if group, ok := m.items[entity.group]; ok {
+	if group, ok := m.bygrp[entity.group]; ok {
 		delete(group, entity.serial)
 	}
+	delete(m.byids, entity.serial)
 	m.lock.Unlock()
+}
+
+// RangeEntitiesByGroup iterates over the entities of a specific group.
+func (m *Manager) RangeEntitiesByGroup(group string, f func(*Entity) bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	if group, ok := m.bygrp[group]; ok {
+		for _, e := range group {
+			if !f(e) {
+				return
+			}
+		}
+	}
+}
+
+// RangeEntities iterates over all entities present. Note that this can be slow
+// and acquires a read lock, prefer iterating for a single group instead.
+func (m *Manager) RangeEntities(f func(*Entity) bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	for _, e := range m.byids {
+		if !f(e) {
+			return
+		}
+	}
+}
+
+// GetEntity returns the entity by its Serial.
+func (m *Manager) GetEntity(id Serial) (*Entity, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	e, ok := m.byids[id]
+	return e, ok
 }
 
 // ---------------------- Manage Component Pools -------------------------
@@ -103,6 +140,25 @@ func (m *Manager) DetachProvider(providers ...Provider) {
 	}
 }
 
+// RangeProviders iterates over all registered component providers.
+func (m *Manager) RangeProviders(f func(Provider) bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	for _, p := range m.pools {
+		if !f(p) {
+			return
+		}
+	}
+}
+
+// GetProvider returns the provider for a specific component type.
+func (m *Manager) GetProvider(typ ComponentType) (Provider, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	p, ok := m.pools[typ]
+	return p, ok
+}
+
 // -------------------------- Manage Systems -----------------------------
 
 // AttachSystem registers one or more systems to the manager.
@@ -115,34 +171,43 @@ func (m *Manager) AttachSystem(systems ...System) error {
 		if err := s.Start(m); err != nil {
 			return err
 		}
-		m.sys = append(m.sys, s)
+		m.sys[s.Name()] = s
 	}
 	return nil
 }
 
-// UnregisterSystem DetachSystem one or more systems from the managers.
+// DetachSystem DetachSystem one or more systems from the managers.
 func (m *Manager) DetachSystem(systems ...System) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	// Filter only valid systems and close the target systems
-	var filtered []System
-	for _, s := range m.sys {
-		found := false
-		for _, x := range systems {
-			if x == s {
-				found = true
-				if err := s.Close(); err != nil {
-					return err
-				}
-				break
+	for _, x := range systems {
+		if sys, ok := m.sys[x.Name()]; ok {
+			delete(m.sys, x.Name())
+			if err := sys.Close(); err != nil {
+				return err
 			}
 		}
+	}
 
-		if !found {
-			filtered = append(filtered, s)
+	return nil
+}
+
+// RangeSystems iterates over all registered systems.
+func (m *Manager) RangeSystems(f func(System) bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	for _, s := range m.sys {
+		if !f(s) {
+			return
 		}
 	}
-	m.sys = filtered
-	return nil
+}
+
+// GetSystem returns the system by its name.
+func (m *Manager) GetSystem(name string) (System, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	s, ok := m.sys[name]
+	return s, ok
 }
