@@ -32,7 +32,7 @@ type Manager interface {
 	DetachEntity(entity *Entity)
 	RangeEntitiesByGroup(group string, f func(*Entity) bool)
 	RangeEntities(f func(*Entity) bool)
-	GetEntity(id Serial) (*Entity, bool)
+	GetEntity(id Serial) *Entity
 	AttachProvider(providers ...Provider)
 	DetachProvider(providers ...Provider)
 	RangeProviders(f func(Provider) bool)
@@ -130,11 +130,13 @@ func (m *manager) RangeEntities(f func(*Entity) bool) {
 }
 
 // GetEntity returns the entity by its Serial.
-func (m *manager) GetEntity(id Serial) (*Entity, bool) {
+func (m *manager) GetEntity(id Serial) *Entity {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	e, ok := m.byids[id]
-	return e, ok
+	if e, ok := m.byids[id]; ok {
+		return e
+	}
+	return nil
 }
 
 // ---------------------- Manage Component Pools -------------------------
