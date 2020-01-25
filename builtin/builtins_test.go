@@ -5,7 +5,6 @@ package builtin
 
 import (
 	"bytes"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ import (
 func Test_ProviderOfTType(t *testing.T) {
 	arr := NewProviderOfTType()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfTType{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfTType, arr.Type())
 
 	index1 := arr.Add(TType(123))
 	index2 := arr.Add(TType(123))

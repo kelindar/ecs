@@ -16,6 +16,9 @@ type TType generic.Type
 
 // --------------------------- Component of TType ----------------------------
 
+// TypeOfTType returns the type of the component
+var TypeOfTType = reflect.TypeOf(new(TType)).Elem()
+
 // ProviderOfTType represents an array of components.
 type ProviderOfTType struct {
 	sync.RWMutex

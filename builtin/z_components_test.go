@@ -9,7 +9,6 @@ package builtin
 
 import (
 	"bytes"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ import (
 func Test_ProviderOfFloat32(t *testing.T) {
 	arr := NewProviderOfFloat32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfFloat32{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfFloat32, arr.Type())
 
 	index1 := arr.Add(float32(123))
 	index2 := arr.Add(float32(123))
@@ -71,7 +70,7 @@ func Test_CodecOfFloat32(t *testing.T) {
 func Test_ProviderOfFloat64(t *testing.T) {
 	arr := NewProviderOfFloat64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfFloat64{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfFloat64, arr.Type())
 
 	index1 := arr.Add(float64(123))
 	index2 := arr.Add(float64(123))
@@ -123,7 +122,7 @@ func Test_CodecOfFloat64(t *testing.T) {
 func Test_ProviderOfInt16(t *testing.T) {
 	arr := NewProviderOfInt16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfInt16{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfInt16, arr.Type())
 
 	index1 := arr.Add(int16(123))
 	index2 := arr.Add(int16(123))
@@ -175,7 +174,7 @@ func Test_CodecOfInt16(t *testing.T) {
 func Test_ProviderOfInt32(t *testing.T) {
 	arr := NewProviderOfInt32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfInt32{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfInt32, arr.Type())
 
 	index1 := arr.Add(int32(123))
 	index2 := arr.Add(int32(123))
@@ -227,7 +226,7 @@ func Test_CodecOfInt32(t *testing.T) {
 func Test_ProviderOfInt64(t *testing.T) {
 	arr := NewProviderOfInt64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfInt64{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfInt64, arr.Type())
 
 	index1 := arr.Add(int64(123))
 	index2 := arr.Add(int64(123))
@@ -279,7 +278,7 @@ func Test_CodecOfInt64(t *testing.T) {
 func Test_ProviderOfUint16(t *testing.T) {
 	arr := NewProviderOfUint16()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfUint16{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfUint16, arr.Type())
 
 	index1 := arr.Add(uint16(123))
 	index2 := arr.Add(uint16(123))
@@ -331,7 +330,7 @@ func Test_CodecOfUint16(t *testing.T) {
 func Test_ProviderOfUint32(t *testing.T) {
 	arr := NewProviderOfUint32()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfUint32{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfUint32, arr.Type())
 
 	index1 := arr.Add(uint32(123))
 	index2 := arr.Add(uint32(123))
@@ -383,7 +382,7 @@ func Test_CodecOfUint32(t *testing.T) {
 func Test_ProviderOfUint64(t *testing.T) {
 	arr := NewProviderOfUint64()
 	assert.NotNil(t, arr)
-	assert.Equal(t, reflect.TypeOf(pageOfUint64{}.data).Elem(), arr.Type())
+	assert.Equal(t, TypeOfUint64, arr.Type())
 
 	index1 := arr.Add(uint64(123))
 	index2 := arr.Add(uint64(123))

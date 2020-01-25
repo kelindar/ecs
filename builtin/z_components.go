@@ -14,6 +14,9 @@ import (
 
 // --------------------------- Component of float32 ----------------------------
 
+// TypeOfFloat32 returns the type of the component
+var TypeOfFloat32 = reflect.TypeOf(new(float32)).Elem()
+
 // ProviderOfFloat32 represents an array of components.
 type ProviderOfFloat32 struct {
 	sync.RWMutex
@@ -205,6 +208,9 @@ func (p *pageOfFloat32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 }
 
 // --------------------------- Component of float64 ----------------------------
+
+// TypeOfFloat64 returns the type of the component
+var TypeOfFloat64 = reflect.TypeOf(new(float64)).Elem()
 
 // ProviderOfFloat64 represents an array of components.
 type ProviderOfFloat64 struct {
@@ -398,6 +404,9 @@ func (p *pageOfFloat64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of int16 ----------------------------
 
+// TypeOfInt16 returns the type of the component
+var TypeOfInt16 = reflect.TypeOf(new(int16)).Elem()
+
 // ProviderOfInt16 represents an array of components.
 type ProviderOfInt16 struct {
 	sync.RWMutex
@@ -589,6 +598,9 @@ func (p *pageOfInt16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 }
 
 // --------------------------- Component of int32 ----------------------------
+
+// TypeOfInt32 returns the type of the component
+var TypeOfInt32 = reflect.TypeOf(new(int32)).Elem()
 
 // ProviderOfInt32 represents an array of components.
 type ProviderOfInt32 struct {
@@ -782,6 +794,9 @@ func (p *pageOfInt32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of int64 ----------------------------
 
+// TypeOfInt64 returns the type of the component
+var TypeOfInt64 = reflect.TypeOf(new(int64)).Elem()
+
 // ProviderOfInt64 represents an array of components.
 type ProviderOfInt64 struct {
 	sync.RWMutex
@@ -973,6 +988,9 @@ func (p *pageOfInt64) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 }
 
 // --------------------------- Component of uint16 ----------------------------
+
+// TypeOfUint16 returns the type of the component
+var TypeOfUint16 = reflect.TypeOf(new(uint16)).Elem()
 
 // ProviderOfUint16 represents an array of components.
 type ProviderOfUint16 struct {
@@ -1166,6 +1184,9 @@ func (p *pageOfUint16) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 // --------------------------- Component of uint32 ----------------------------
 
+// TypeOfUint32 returns the type of the component
+var TypeOfUint32 = reflect.TypeOf(new(uint32)).Elem()
+
 // ProviderOfUint32 represents an array of components.
 type ProviderOfUint32 struct {
 	sync.RWMutex
@@ -1357,6 +1378,9 @@ func (p *pageOfUint32) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 }
 
 // --------------------------- Component of uint64 ----------------------------
+
+// TypeOfUint64 returns the type of the component
+var TypeOfUint64 = reflect.TypeOf(new(uint64)).Elem()
 
 // ProviderOfUint64 represents an array of components.
 type ProviderOfUint64 struct {
