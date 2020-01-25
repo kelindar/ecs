@@ -4,6 +4,7 @@
 package ecs
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -22,29 +23,12 @@ type Provider interface {
 // System represents the contract that a system should implement.
 type System interface {
 	Name() string
-	Start(Manager) error
+	Start(context.Context, *Manager) error
 	Close() error
 }
 
 // Manager represents a manager of entities, components and systems.
-type Manager interface {
-	AttachEntity(entity *Entity, components ...interface{}) error
-	DetachEntity(entity *Entity)
-	RangeEntitiesByGroup(group string, f func(*Entity) bool)
-	RangeEntities(f func(*Entity) bool)
-	GetEntity(id Serial) *Entity
-	AttachProvider(providers ...Provider)
-	DetachProvider(providers ...Provider)
-	RangeProviders(f func(Provider) bool)
-	GetProvider(typ ComponentType) Provider
-	AttachSystem(systems ...System) error
-	DetachSystem(systems ...System) error
-	RangeSystems(f func(System) bool)
-	GetSystem(name string) System
-}
-
-// manager represents a manager of entities, components and systems.
-type manager struct {
+type Manager struct {
 	events
 	lock  sync.RWMutex
 	sys   map[string]System
@@ -54,8 +38,8 @@ type manager struct {
 }
 
 // NewManager returns a new manager instance.
-func NewManager() Manager {
-	return &manager{
+func NewManager() *Manager {
+	return &Manager{
 		pools: make(map[ComponentType]Provider, 100),
 		bygrp: make(map[string]map[Serial]*Entity, 100),
 		byids: make(map[Serial]*Entity, 1000000),
@@ -66,7 +50,7 @@ func NewManager() Manager {
 // --------------------------- Manage Entities ----------------------------
 
 // AttachEntity attaches an entity with the set of components.
-func (m *manager) AttachEntity(entity *Entity, components ...interface{}) error {
+func (m *Manager) AttachEntity(entity *Entity, components ...interface{}) error {
 	for _, part := range components {
 		typ := reflect.TypeOf(part)
 		pool, ok := m.pools[typ]
@@ -90,7 +74,7 @@ func (m *manager) AttachEntity(entity *Entity, components ...interface{}) error 
 }
 
 // DetachEntity detaches an entity from the manager and frees the components.
-func (m *manager) DetachEntity(entity *Entity) {
+func (m *Manager) DetachEntity(entity *Entity) {
 	for _, h := range entity.parts {
 		h.mem.RemoveAt(h.idx)
 	}
@@ -105,7 +89,7 @@ func (m *manager) DetachEntity(entity *Entity) {
 }
 
 // RangeEntitiesByGroup iterates over the entities of a specific group.
-func (m *manager) RangeEntitiesByGroup(group string, f func(*Entity) bool) {
+func (m *Manager) RangeEntitiesByGroup(group string, f func(*Entity) bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if group, ok := m.bygrp[group]; ok {
@@ -119,7 +103,7 @@ func (m *manager) RangeEntitiesByGroup(group string, f func(*Entity) bool) {
 
 // RangeEntities iterates over all entities present. Note that this can be slow
 // and acquires a read lock, prefer iterating for a single group instead.
-func (m *manager) RangeEntities(f func(*Entity) bool) {
+func (m *Manager) RangeEntities(f func(*Entity) bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	for _, e := range m.byids {
@@ -130,7 +114,7 @@ func (m *manager) RangeEntities(f func(*Entity) bool) {
 }
 
 // GetEntity returns the entity by its Serial.
-func (m *manager) GetEntity(id Serial) *Entity {
+func (m *Manager) GetEntity(id Serial) *Entity {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if e, ok := m.byids[id]; ok {
@@ -142,7 +126,7 @@ func (m *manager) GetEntity(id Serial) *Entity {
 // ---------------------- Manage Component Pools -------------------------
 
 // AttachProvider registers one or more component pools to the manager.
-func (m *manager) AttachProvider(providers ...Provider) {
+func (m *Manager) AttachProvider(providers ...Provider) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for _, p := range providers {
@@ -151,7 +135,7 @@ func (m *manager) AttachProvider(providers ...Provider) {
 }
 
 // DetachProvider unregisters one or more component pools from the managers
-func (m *manager) DetachProvider(providers ...Provider) {
+func (m *Manager) DetachProvider(providers ...Provider) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for _, p := range providers {
@@ -160,7 +144,7 @@ func (m *manager) DetachProvider(providers ...Provider) {
 }
 
 // RangeProviders iterates over all registered component providers.
-func (m *manager) RangeProviders(f func(Provider) bool) {
+func (m *Manager) RangeProviders(f func(Provider) bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	for _, p := range m.pools {
@@ -171,7 +155,7 @@ func (m *manager) RangeProviders(f func(Provider) bool) {
 }
 
 // GetProvider returns the provider for a specific component type.
-func (m *manager) GetProvider(typ ComponentType) Provider {
+func (m *Manager) GetProvider(typ ComponentType) Provider {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if p, ok := m.pools[typ]; ok {
@@ -183,13 +167,13 @@ func (m *manager) GetProvider(typ ComponentType) Provider {
 // -------------------------- Manage Systems -----------------------------
 
 // AttachSystem registers one or more systems to the manager.
-func (m *manager) AttachSystem(systems ...System) error {
+func (m *Manager) AttachSystem(ctx context.Context, systems ...System) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	// Start and append all systems
 	for _, s := range systems {
-		if err := s.Start(m); err != nil {
+		if err := s.Start(ctx, m); err != nil {
 			return err
 		}
 		m.sys[s.Name()] = s
@@ -198,7 +182,7 @@ func (m *manager) AttachSystem(systems ...System) error {
 }
 
 // DetachSystem DetachSystem one or more systems from the managers.
-func (m *manager) DetachSystem(systems ...System) error {
+func (m *Manager) DetachSystem(systems ...System) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -215,7 +199,7 @@ func (m *manager) DetachSystem(systems ...System) error {
 }
 
 // RangeSystems iterates over all registered systems.
-func (m *manager) RangeSystems(f func(System) bool) {
+func (m *Manager) RangeSystems(f func(System) bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	for _, s := range m.sys {
@@ -226,7 +210,7 @@ func (m *manager) RangeSystems(f func(System) bool) {
 }
 
 // GetSystem returns the system by its name.
-func (m *manager) GetSystem(name string) System {
+func (m *Manager) GetSystem(name string) System {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	if s, ok := m.sys[name]; ok {

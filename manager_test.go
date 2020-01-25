@@ -4,6 +4,7 @@
 package ecs
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestManager() Manager {
+func newTestManager() *Manager {
 	m := NewManager()
 	m.AttachProvider(builtin.NewProviderOfFloat32())
 	m.AttachProvider(builtin.NewProviderOfFloat64())
@@ -29,8 +30,8 @@ func TestManager(t *testing.T) {
 
 	m.DetachEntity(e1)
 
-	e, ok := m.GetEntity(Serial(2))
-	assert.True(t, ok)
+	e := m.GetEntity(Serial(2))
+	assert.NotNil(t, e)
 	assert.Equal(t, e2, e)
 
 }
@@ -41,13 +42,13 @@ func TestProviders(t *testing.T) {
 	// Attach and get the provider back
 	i64 := builtin.NewProviderOfInt64()
 	m.AttachProvider(i64)
-	_, ok := m.GetProvider(reflect.TypeOf(int64(1.0)))
-	assert.True(t, ok)
+	out := m.GetProvider(reflect.TypeOf(int64(1.0)))
+	assert.NotNil(t, out)
 
 	// Detach the provider
 	m.DetachProvider(i64)
-	_, ok = m.GetProvider(reflect.TypeOf(int64(1.0)))
-	assert.False(t, ok)
+	out = m.GetProvider(reflect.TypeOf(int64(1.0)))
+	assert.Nil(t, out)
 
 	count := 0
 	m.RangeProviders(func(Provider) bool {
@@ -82,18 +83,18 @@ func TestRangeEntities(t *testing.T) {
 
 func TestSystems(t *testing.T) {
 	m := newTestManager()
-	m.AttachSystem(&testSystem{name: "dummy"})
+	m.AttachSystem(context.Background(), &testSystem{name: "dummy"})
 
 	// Attach and get the provider back
 	s := &testSystem{name: "test"}
-	m.AttachSystem(s)
-	_, ok := m.GetSystem("test")
-	assert.True(t, ok)
+	m.AttachSystem(context.Background(), s)
+	out := m.GetSystem("test")
+	assert.NotNil(t, out)
 
 	// Detach the provider
 	m.DetachSystem(s)
-	_, ok = m.GetSystem("test")
-	assert.False(t, ok)
+	out = m.GetSystem("test")
+	assert.Nil(t, out)
 
 	count := 0
 	m.RangeSystems(func(System) bool {
@@ -111,7 +112,7 @@ func (s *testSystem) Name() string {
 	return s.name
 }
 
-func (s *testSystem) Start(Manager) error {
+func (s *testSystem) Start(context.Context, *Manager) error {
 	return nil
 }
 
