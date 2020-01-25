@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestManager() *Manager {
+func newTestManager() Manager {
 	m := NewManager()
 	m.AttachProvider(builtin.NewProviderOfFloat32())
 	m.AttachProvider(builtin.NewProviderOfFloat64())
@@ -111,7 +111,7 @@ func (s *testSystem) Name() string {
 	return s.name
 }
 
-func (s *testSystem) Start(*Manager) error {
+func (s *testSystem) Start(Manager) error {
 	return nil
 }
 
