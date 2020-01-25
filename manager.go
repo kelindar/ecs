@@ -36,11 +36,11 @@ type Manager interface {
 	AttachProvider(providers ...Provider)
 	DetachProvider(providers ...Provider)
 	RangeProviders(f func(Provider) bool)
-	GetProvider(typ ComponentType) (Provider, bool)
+	GetProvider(typ ComponentType) Provider
 	AttachSystem(systems ...System) error
 	DetachSystem(systems ...System) error
 	RangeSystems(f func(System) bool)
-	GetSystem(name string) (System, bool)
+	GetSystem(name string) System
 }
 
 // manager represents a manager of entities, components and systems.
@@ -169,11 +169,13 @@ func (m *manager) RangeProviders(f func(Provider) bool) {
 }
 
 // GetProvider returns the provider for a specific component type.
-func (m *manager) GetProvider(typ ComponentType) (Provider, bool) {
+func (m *manager) GetProvider(typ ComponentType) Provider {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	p, ok := m.pools[typ]
-	return p, ok
+	if p, ok := m.pools[typ]; ok {
+		return p
+	}
+	return nil
 }
 
 // -------------------------- Manage Systems -----------------------------
@@ -222,9 +224,11 @@ func (m *manager) RangeSystems(f func(System) bool) {
 }
 
 // GetSystem returns the system by its name.
-func (m *manager) GetSystem(name string) (System, bool) {
+func (m *manager) GetSystem(name string) System {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	s, ok := m.sys[name]
-	return s, ok
+	if s, ok := m.sys[name]; ok {
+		return s
+	}
+	return nil
 }
