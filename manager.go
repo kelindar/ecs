@@ -168,27 +168,26 @@ func (m *Manager) GetProvider(typ ComponentType) Provider {
 
 // AttachSystem registers one or more systems to the manager.
 func (m *Manager) AttachSystem(ctx context.Context, systems ...System) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	// Start and append all systems
 	for _, s := range systems {
 		if err := s.Start(ctx, m); err != nil {
 			return err
 		}
+
+		m.lock.Lock()
 		m.sys[s.Name()] = s
+		m.lock.Unlock()
 	}
 	return nil
 }
 
 // DetachSystem DetachSystem one or more systems from the managers.
 func (m *Manager) DetachSystem(systems ...System) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
 	for _, x := range systems {
 		if sys, ok := m.sys[x.Name()]; ok {
+			m.lock.Lock()
 			delete(m.sys, x.Name())
+			m.lock.Unlock()
+
 			if err := sys.Close(); err != nil {
 				return err
 			}
