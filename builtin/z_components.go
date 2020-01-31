@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/vmihailenco/msgpack"
+	"github.com/vmihailenco/msgpack/v4"
 )
 
 // --------------------------- Component of float32 ----------------------------
