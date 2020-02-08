@@ -1,4 +1,4 @@
-package builtin
+package provider
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-func Test_Generic(t *testing.T) {
-	arr := NewProviderOfTType()
+func Test_Any(t *testing.T) {
+	arr := NewProviderOfAny()
 	assert.NotNil(t, arr)
 
 	for i := 0; i < 150; i++ {
@@ -17,7 +17,7 @@ func Test_Generic(t *testing.T) {
 	}
 
 	count := 0
-	arr.View(func(_ *TType) {
+	arr.View(func(_ *Any) {
 		count++
 	})
 
@@ -26,7 +26,7 @@ func Test_Generic(t *testing.T) {
 }
 
 func Test_Page(t *testing.T) {
-	var page pageOfTType
+	var page pageOfAny
 
 	assert.Equal(t, 0, page.Add(nil))
 	assert.Equal(t, 1, page.Add(nil))
@@ -36,7 +36,7 @@ func Test_Page(t *testing.T) {
 	assert.Equal(t, 3, page.Add(nil))
 
 	count := 0
-	page.Range(func(*TType) {
+	page.Range(func(*Any) {
 		count++
 	})
 	assert.Equal(t, 4, count)
@@ -46,10 +46,10 @@ func Test_Page(t *testing.T) {
 	assert.Equal(t, true, page.IsFull())
 }
 
-// Benchmark_Component/add-8         	      10	 108778350 ns/op	79380153 B/op	 2000019 allocs/op
-// Benchmark_Component/view-8        	     880	   1398878 ns/op	       0 B/op	       0 allocs/op
-// Benchmark_Component/update-8      	     897	   1372576 ns/op	       0 B/op	       0 allocs/op
-// Benchmark_Component/at-8          	      40	  29211575 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/add-8         	      18	  56683200 ns/op	39380796 B/op	      20 allocs/op
+// Benchmark_Component/view-8        	     786	   1522678 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/update-8      	     786	   1516294 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_Component/at-8          	      42	  28329581 ns/op	       0 B/op	       0 allocs/op
 func Benchmark_Component(b *testing.B) {
 	const size = 1000000
 
@@ -57,23 +57,23 @@ func Benchmark_Component(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			array := NewProviderOfInt64()
+			array := NewProviderOfAny()
 			for i := 0; i < size; i++ {
-				array.Add(1)
+				array.Add(nil)
 			}
 		}
 	})
 
-	array := NewProviderOfInt64()
+	array := NewProviderOfAny()
 	for i := 0; i < size; i++ {
-		array.Add(1)
+		array.Add(nil)
 	}
 
 	b.Run("view", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			array.View(func(v *int64) {
+			array.View(func(v *Any) {
 				return
 			})
 		}
@@ -84,7 +84,7 @@ func Benchmark_Component(b *testing.B) {
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
 			x := int64(123)
-			array.Update(func(v *int64) {
+			array.Update(func(v *Any) {
 				*v = x
 				return
 			})
@@ -103,11 +103,13 @@ func Benchmark_Component(b *testing.B) {
 
 }
 
+// Benchmark_Codec/encode-8         	      21	  54188300 ns/op	27158966 B/op	   15647 allocs/op
+// Benchmark_Codec/decode-8         	      16	  66944169 ns/op	16656464 B/op	      18 allocs/op
 func Benchmark_Codec(b *testing.B) {
 	const size = 1000000
-	array := NewProviderOfInt64()
+	array := NewProviderOfAny()
 	for i := 0; i < size; i++ {
-		array.Add(1)
+		array.Add(nil)
 	}
 
 	b.Run("encode", func(b *testing.B) {
@@ -131,7 +133,7 @@ func Benchmark_Codec(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
-			arr := NewProviderOfInt64()
+			arr := NewProviderOfAny()
 			buf := bytes.NewBuffer(encoded.Bytes())
 			dec := msgpack.NewDecoder(buf)
 			if err := dec.Decode(arr); err != nil {

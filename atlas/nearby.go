@@ -13,7 +13,7 @@ package atlas
 // largest dist.
 // Take a look at the SimpleBoxAlgo function for a usage example.
 func (tr *Atlas) Nearby(
-	algo func(min, max [2]int32, data interface{}, item bool) (dist int32),
+	algo DistanceFunc,
 	iter func(min, max [2]int32, data interface{}, dist int32) bool,
 ) {
 	var q queue

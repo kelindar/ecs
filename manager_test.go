@@ -5,17 +5,15 @@ package ecs
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
-	"github.com/kelindar/ecs/builtin"
+	"github.com/kelindar/ecs/provider"
 	"github.com/stretchr/testify/assert"
 )
 
 func newTestManager() *Manager {
 	m := NewManager()
-	m.AttachProvider(builtin.NewProviderOfFloat32())
-	m.AttachProvider(builtin.NewProviderOfFloat64())
+	m.AttachProvider(provider.NewProviderOfPoint())
 	return m
 }
 
@@ -25,8 +23,8 @@ func TestManager(t *testing.T) {
 	// Attach a couple of entities
 	e1 := NewEntity("player", 1)
 	e2 := NewEntity("player", 2)
-	assert.NoError(t, m.AttachEntity(e1, float64(2.0)))
-	assert.NoError(t, m.AttachEntity(e2, float64(10.0)))
+	assert.NoError(t, m.AttachEntity(e1, provider.Point{X: 1}))
+	assert.NoError(t, m.AttachEntity(e2, provider.Point{X: 2}))
 
 	m.DetachEntity(e1)
 
@@ -37,34 +35,41 @@ func TestManager(t *testing.T) {
 }
 
 func TestProviders(t *testing.T) {
-	m := newTestManager()
+	m := NewManager()
 
 	// Attach and get the provider back
-	i64 := builtin.NewProviderOfInt64()
-	m.AttachProvider(i64)
-	out := m.GetProvider(reflect.TypeOf(int64(1.0)))
+	p := provider.NewProviderOfPoint()
+	m.AttachProvider(p)
+	out := m.GetProvider(provider.TypeOfPoint)
 	assert.NotNil(t, out)
-
-	// Detach the provider
-	m.DetachProvider(i64)
-	out = m.GetProvider(reflect.TypeOf(int64(1.0)))
-	assert.Nil(t, out)
 
 	count := 0
 	m.RangeProviders(func(Provider) bool {
 		count++
 		return true
 	})
-	assert.Equal(t, 2, count)
+	assert.Equal(t, 1, count)
+
+	// Detach the provider
+	m.DetachProvider(p)
+	out = m.GetProvider(provider.TypeOfPoint)
+	assert.Nil(t, out)
+
+	count = 0
+	m.RangeProviders(func(Provider) bool {
+		count++
+		return true
+	})
+	assert.Equal(t, 0, count)
 }
 
 func TestRangeEntities(t *testing.T) {
 	m := newTestManager()
 
 	// Attach a couple of entities
-	assert.NoError(t, m.AttachEntity(NewEntity("player", 1), float64(2.0)))
-	assert.NoError(t, m.AttachEntity(NewEntity("player", 2), float64(10.0)))
-	assert.NoError(t, m.AttachEntity(NewEntity("item", 3), float64(2.0), float32(1.0)))
+	assert.NoError(t, m.AttachEntity(NewEntity("player", 1), provider.Point{X: 1}))
+	assert.NoError(t, m.AttachEntity(NewEntity("player", 2), provider.Point{X: 1}))
+	assert.NoError(t, m.AttachEntity(NewEntity("item", 3), provider.Point{X: 1}))
 
 	count := 0
 	m.RangeEntities(func(e *Entity) bool {

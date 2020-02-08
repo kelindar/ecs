@@ -1,4 +1,4 @@
-package builtin
+package provider
 
 import (
 	"math"
@@ -9,50 +9,55 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components.go gen "TType=float32,float64,int16,int32,int64,uint16,uint32,uint64"
+//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components.go gen "Any=Box"
 
-// TType is the generic type.
-type TType generic.Type
+// Any is the generic type.
+type Any generic.Type
 
-// --------------------------- Component of TType ----------------------------
+// --------------------------- Component of Any ----------------------------
 
-// TypeOfTType returns the type of the component
-var TypeOfTType = reflect.TypeOf(new(TType)).Elem()
+// TypeOfAny returns the type of the component
+var TypeOfAny = reflect.TypeOf(new(Any)).Elem()
 
-// ProviderOfTType represents an array of components.
-type ProviderOfTType struct {
+// ProviderOfAny represents an array of components.
+type ProviderOfAny struct {
 	sync.RWMutex
 	typ  reflect.Type
 	free []int
-	page []pageOfTType
+	page []pageOfAny
 }
 
-// NewProviderOfTType creates an array of components for the specific type.
-func NewProviderOfTType() *ProviderOfTType {
+// NewProviderOfAny creates an array of components for the specific type.
+func NewProviderOfAny() *ProviderOfAny {
 	const cap = 128
-	c := &ProviderOfTType{
+	c := &ProviderOfAny{
 		free: make([]int, 0, cap),
-		page: make([]pageOfTType, 0, cap),
+		page: make([]pageOfAny, 0, cap),
 	}
-	c.typ = reflect.TypeOf(pageOfTType{}.data).Elem()
+	c.typ = reflect.TypeOf(pageOfAny{}.data).Elem()
 	return c
 }
 
 // Type returns the type of the component.
-func (c *ProviderOfTType) Type() reflect.Type {
+func (c *ProviderOfAny) Type() reflect.Type {
 	return c.typ
 }
 
 // Add adds a component to the array. Returns the index in the array which
 // can be used to remove the component from the array.
-func (c *ProviderOfTType) Add(component interface{}) int {
-	v := component.(TType) // Must be of correct type
+func (c *ProviderOfAny) Add(v interface{}) int {
+	return c.AddAny(v.(Any)) // Must be of correct type
+}
+
+// AddAny adds a component to the array. Returns the index in the array which
+// can be used to remove the component from the array.
+func (c *ProviderOfAny) AddAny(v Any) int {
 	c.Lock()
 	defer c.Unlock()
 
 	if len(c.free) == 0 {
 		pageAt := len(c.page)
-		c.page = append(c.page, pageOfTType{})
+		c.page = append(c.page, pageOfAny{})
 		c.free = append(c.free, pageAt)
 		offset := c.page[pageAt].Add(v)
 		return (64 * pageAt) + offset
@@ -71,7 +76,7 @@ func (c *ProviderOfTType) Add(component interface{}) int {
 // View iterates over the array but only acquires a read lock. Make sure you do
 // not mutate the state during this iteration as the pointer is given merely for
 // performance reasons.
-func (c *ProviderOfTType) View(f func(*TType)) {
+func (c *ProviderOfAny) View(f func(*Any)) {
 	c.RLock()
 	defer c.RUnlock()
 	for i := 0; i < len(c.page); i++ {
@@ -81,7 +86,7 @@ func (c *ProviderOfTType) View(f func(*TType)) {
 
 // Update ranges over the data in the slice and lets the user update it. This
 // acquires a read-write lock and is safe to update concurrently.
-func (c *ProviderOfTType) Update(f func(*TType)) {
+func (c *ProviderOfAny) Update(f func(*Any)) {
 	c.Lock()
 	defer c.Unlock()
 	for i := 0; i < len(c.page); i++ {
@@ -91,7 +96,7 @@ func (c *ProviderOfTType) Update(f func(*TType)) {
 
 // ViewAt returns a specific component located at the given index. Read lock
 // is acquired in this operation, use it sparingly.
-func (c *ProviderOfTType) ViewAt(index int) TType {
+func (c *ProviderOfAny) ViewAt(index int) Any {
 	pageAt, offset := index/64, index%64
 	c.RLock()
 	defer c.RUnlock()
@@ -100,7 +105,7 @@ func (c *ProviderOfTType) ViewAt(index int) TType {
 
 // UpdateAt updates a component at a specific location. Write lock is acquired
 // in this operation, use it sparingly.
-func (c *ProviderOfTType) UpdateAt(index int, f func(*TType)) {
+func (c *ProviderOfAny) UpdateAt(index int, f func(*Any)) {
 	pageAt, offset := index/64, index%64
 	c.Lock()
 	f(c.page[pageAt].At(offset))
@@ -109,7 +114,7 @@ func (c *ProviderOfTType) UpdateAt(index int, f func(*TType)) {
 
 // RemoveAt removes a component at a specific location. Write lock is acquired
 // in this operation, use it sparingly.
-func (c *ProviderOfTType) RemoveAt(index int) {
+func (c *ProviderOfAny) RemoveAt(index int) {
 	pageAt, offset := index/64, index%64
 	c.Lock()
 	defer c.Unlock()
@@ -120,7 +125,7 @@ func (c *ProviderOfTType) RemoveAt(index int) {
 }
 
 // EncodeMsgpack encodes the component in message pack format into the writer.
-func (c *ProviderOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (c *ProviderOfAny) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.Encode(c.free); err == nil {
 		err = enc.Encode(c.page)
 	}
@@ -128,23 +133,23 @@ func (c *ProviderOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // DecodeMsgpack decodes the page from the reader in message pack format.
-func (c *ProviderOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (c *ProviderOfAny) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if err = dec.Decode(&c.free); err == nil {
 		err = dec.Decode(&c.page)
 	}
 	return
 }
 
-// ---------------------------- Page of TType -----------------------------
+// ---------------------------- Page of Any -----------------------------
 
 // Page represents a page for a particular type.
-type pageOfTType struct {
+type pageOfAny struct {
 	full uint64
-	data [64]TType
+	data [64]Any
 }
 
 // Add adds an element to the page and returns the offset.
-func (p *pageOfTType) Add(v TType) (index int) {
+func (p *pageOfAny) Add(v Any) (index int) {
 	if p.IsFull() {
 		return -1
 	}
@@ -160,17 +165,17 @@ func (p *pageOfTType) Add(v TType) (index int) {
 }
 
 // Del deletes an element at an offset.
-func (p *pageOfTType) Del(index int) {
+func (p *pageOfAny) Del(index int) {
 	p.full &= uint64(^(1 << index))
 }
 
 // IsFull checks whether the page is full or not.
-func (p *pageOfTType) IsFull() bool {
+func (p *pageOfAny) IsFull() bool {
 	return p.full == math.MaxUint64
 }
 
 // At returns a specific component located at the given index.
-func (p *pageOfTType) At(index int) *TType {
+func (p *pageOfAny) At(index int) *Any {
 	if (p.full & (1 << index)) > 0 {
 		return &p.data[index]
 	}
@@ -178,7 +183,7 @@ func (p *pageOfTType) At(index int) *TType {
 }
 
 // Range iterates over the page.
-func (p *pageOfTType) Range(f func(*TType)) {
+func (p *pageOfAny) Range(f func(*Any)) {
 	if p.IsFull() {
 		for i := 0; i < 64; i++ {
 			f(&p.data[i])
@@ -194,7 +199,7 @@ func (p *pageOfTType) Range(f func(*TType)) {
 }
 
 // Encode encodes the page in message pack format into the writer.
-func (p *pageOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
+func (p *pageOfAny) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 	if err = enc.EncodeUint64(p.full); err == nil {
 		err = enc.Encode(p.data)
 	}
@@ -202,7 +207,7 @@ func (p *pageOfTType) EncodeMsgpack(enc *msgpack.Encoder) (err error) {
 }
 
 // Decode decodes the page from the reader in message pack format.
-func (p *pageOfTType) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+func (p *pageOfAny) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 	if p.full, err = dec.DecodeUint64(); err == nil {
 		err = dec.Decode(&p.data)
 	}

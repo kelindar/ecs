@@ -255,7 +255,7 @@ func testBoxesVarious(t *testing.T, tr *Atlas, boxes []tBox, label string) {
 
 	var boxes3 []tBox
 	tr.Nearby(
-		Box(centerMin, centerMax, false, nil),
+		Box(centerMin, centerMax, false),
 		func(min, max [2]int32, value interface{}, dist int32) bool {
 			boxes3 = append(boxes3, value.(tBox))
 			return true

@@ -1,7 +1,7 @@
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-package builtin
+package provider
 
 import (
 	"bytes"
@@ -11,45 +11,44 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-//go:generate genny -pkg=builtin -in=$GOFILE -out=z_components_test.go gen "TType=float32,float64,int16,int32,int64,uint16,uint32,uint64"
-
-func Test_ProviderOfTType(t *testing.T) {
-	arr := NewProviderOfTType()
+func Test_ProviderOfAny(t *testing.T) {
+	arr := NewProviderOfAny()
 	assert.NotNil(t, arr)
-	assert.Equal(t, TypeOfTType, arr.Type())
+	assert.Equal(t, TypeOfAny, arr.Type())
 
-	index1 := arr.Add(TType(123))
-	index2 := arr.Add(TType(123))
+	var v, v2 Any
+	index1 := arr.AddAny(v)
+	index2 := arr.AddAny(v2)
 
 	{
 		count := 0
-		arr.View(func(_ *TType) {
+		arr.View(func(_ *Any) {
 			count++
 		})
 		assert.Equal(t, 2, count)
 	}
 
-	assert.Equal(t, TType(123), arr.ViewAt(index1))
-	arr.UpdateAt(index2, func(v *TType) {
-		*v = 888
+	assert.Equal(t, v, arr.ViewAt(index1))
+	arr.UpdateAt(index2, func(v *Any) {
+		*v = v2
 	})
-	assert.Equal(t, TType(888), arr.ViewAt(index2))
+	assert.Equal(t, v2, arr.ViewAt(index2))
 
 	arr.RemoveAt(index1)
 	arr.RemoveAt(index2)
 
 	{
 		count := 0
-		arr.Update(func(_ *TType) {
+		arr.Update(func(_ *Any) {
 			count++
 		})
 		assert.Equal(t, 0, count)
 	}
 }
 
-func Test_CodecOfTType(t *testing.T) {
-	original := NewProviderOfTType()
-	decoded := NewProviderOfTType()
+func Test_CodecOfAny(t *testing.T) {
+	original := NewProviderOfAny()
+	decoded := NewProviderOfAny()
 
 	// Encode the buffer
 	var encoded bytes.Buffer
