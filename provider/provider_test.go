@@ -52,6 +52,7 @@ func Test_Page(t *testing.T) {
 // Benchmark_Component/at-8          	      42	  28329581 ns/op	       0 B/op	       0 allocs/op
 func Benchmark_Component(b *testing.B) {
 	const size = 1000000
+	element := Any(1)
 
 	b.Run("add", func(b *testing.B) {
 		b.ReportAllocs()
@@ -59,14 +60,14 @@ func Benchmark_Component(b *testing.B) {
 		for n := 0; n < b.N; n++ {
 			array := NewProviderOfAny()
 			for i := 0; i < size; i++ {
-				array.Add(nil)
+				array.Add(element)
 			}
 		}
 	})
 
 	array := NewProviderOfAny()
 	for i := 0; i < size; i++ {
-		array.Add(nil)
+		array.Add(element)
 	}
 
 	b.Run("view", func(b *testing.B) {
@@ -107,9 +108,11 @@ func Benchmark_Component(b *testing.B) {
 // Benchmark_Codec/decode-8         	      16	  66944169 ns/op	16656464 B/op	      18 allocs/op
 func Benchmark_Codec(b *testing.B) {
 	const size = 1000000
+	element := Any(1)
+
 	array := NewProviderOfAny()
 	for i := 0; i < size; i++ {
-		array.Add(nil)
+		array.Add(element)
 	}
 
 	b.Run("encode", func(b *testing.B) {
