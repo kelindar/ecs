@@ -29,7 +29,6 @@ type System interface {
 
 // Manager represents a manager of entities, components and systems.
 type Manager struct {
-	events
 	lock  sync.RWMutex
 	sys   map[string]System
 	pools map[ComponentType]Provider
