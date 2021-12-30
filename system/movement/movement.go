@@ -38,14 +38,9 @@ func (s *System) Attach(w *world.World) error {
 func (s *System) Update(dt *world.Clock) error {
 	elapsed := dt.Elapsed
 	return s.mobiles.Range(func(m mobile.Mobile) {
-
-		// Update both movement vector and location of the mobile
 		if !s.tryUpdate(m, elapsed) {
 			return // No movement
 		}
-
-		// TODO: move the appropriate view here?
-		// Or send an event to connections?
 	}, "moving")
 }
 
