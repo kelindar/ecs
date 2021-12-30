@@ -18,11 +18,11 @@ type Collection = entity.Collection[Mobile]
 
 // NewCollection creates a new mobile object collection
 func NewCollection() *Collection {
-	db := entity.NewCollection("mobiles.bin", At)
-	db.CreateColumn("img", column.ForUint32())  // Image index
-	db.CreateColumn("at", column.ForUint32())   // Location as packed tile.Point
-	db.CreateColumn("move", column.ForUint16()) // Movement vector
-	return db
+    db := entity.NewCollection("mobiles.bin", At)
+    db.CreateColumn("img", column.ForUint32())  // Image index
+    db.CreateColumn("at", column.ForUint32())   // Location as packed tile.Point
+    db.CreateColumn("move", column.ForUint16()) // Movement vector
+    return db
 }
 ```
 
@@ -35,7 +35,7 @@ For example, a mobile entity takes a pointer over a specific row and allows us t
 ```go
 // Mobile represents a view on a current mobile row
 type Mobile struct {
-	row *column.Cursor
+    row *column.Cursor
 }
 
 // Location reads the current location
@@ -45,7 +45,7 @@ func (m *Mobile) Location() tile.Point {
 
 // SetLocation writes the current location
 func (m *Mobile) SetLocation(v tile.Point) {
-	// write the "location" column
+    // write the "location" column
 }
 ```
 
@@ -95,7 +95,7 @@ func (s *System) Update(dt time.Duration) error {
 
             // Update the current location
             m.SetLocation(location)
-		}, "moving") // use moving index
-	})
+        }, "moving") // use moving index
+    })
 }
 ```
