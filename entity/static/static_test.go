@@ -12,8 +12,9 @@ func TestStatic(t *testing.T) {
 	assert.NotNil(t, c)
 
 	// Insert
-	_, err := c.Insert(func(v Static) {
+	err := c.Insert(func(v Static) error {
 		v.SetLocation(tile.At(1, 1))
+		return nil
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, c.Count())

@@ -11,7 +11,7 @@ type Collection = entity.Collection[Static]
 
 // NewCollection creates a new mobile object collection
 func NewCollection() *Collection {
-	db := entity.NewCollection("statics.bin", At)
+	db := entity.NewCollection("statics.bin", fromTxn)
 	db.CreateColumn("img", column.ForUint32()) // Image index
 	db.CreateColumn("at", column.ForUint32())  // Location as packed tile.Point
 	return db
@@ -19,28 +19,43 @@ func NewCollection() *Collection {
 
 // Static represents a view on a current row
 type Static struct {
-	row *column.Cursor
+	id interface {
+		Get() (string, bool)
+	}
+	img interface {
+		Get() (uint32, bool)
+		Set(value uint32)
+	}
+	at interface {
+		Get() (uint32, bool)
+		Set(value uint32)
+	}
 }
 
-// At reads the static object entity at the cursor
-func At(row *column.Cursor) Static {
-	return Static{row: row}
+// fromTxn creates a statically-typed mapping for a transaction
+func fromTxn(txn *column.Txn) Static {
+	return Static{
+		id:  txn.Key(),
+		at:  txn.Uint32("at"),
+		img: txn.Uint32("img"),
+	}
 }
 
-// ID returns the unique identifier of the static object
+// ID returns the unique identifier of the item
 func (e *Static) ID() string {
-	return e.row.StringAt("id")
+	v, _ := e.id.Get()
+	return v
 }
 
 // ---------------------------------- Location ----------------------------------
 
 // Location reads the current location
 func (e *Static) Location() tile.Point {
-	at := e.row.UintAt("at")
+	at, _ := e.at.Get()
 	return tile.At(int16(at>>16), int16(at))
 }
 
 // SetLocation writes the current location
 func (e *Static) SetLocation(v tile.Point) {
-	e.row.SetUint32At("at", v.Integer())
+	e.at.Set(v.Integer())
 }

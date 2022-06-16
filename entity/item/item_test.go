@@ -12,8 +12,9 @@ func TestItem(t *testing.T) {
 	assert.NotNil(t, c)
 
 	// Insert
-	_, err := c.Insert(func(v Item) {
+	err := c.Insert(func(v Item) error {
 		v.SetLocation(tile.At(1, 1))
+		return nil
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, c.Count())

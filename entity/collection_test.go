@@ -8,15 +8,14 @@ import (
 )
 
 func TestCollection(t *testing.T) {
-	c := NewCollection("test", func(c *column.Cursor) Object {
-		return Object{c}
-	})
+	c := NewCollection("test", cursorFor)
 	c.CreateColumn("msg", column.ForString())
 	assert.NotNil(t, c)
 
 	// Insert
-	_, err := c.Insert(func(v Object) {
+	err := c.Insert(func(v Object) error {
 		v.SetMessage("hello")
+		return nil
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, c.Count())
@@ -38,17 +37,32 @@ func TestCollection(t *testing.T) {
 // ---------------------------------- Test object ----------------------------------
 
 type Object struct {
-	row *column.Cursor
+	id interface {
+		Get() (string, bool)
+	}
+	msg interface {
+		Get() (string, bool)
+		Set(string)
+	}
+}
+
+func cursorFor(txn *column.Txn) Object {
+	return Object{
+		id:  txn.Key(),
+		msg: txn.String("msg"),
+	}
 }
 
 func (e *Object) ID() string {
-	return e.row.StringAt("id")
+	v, _ := e.id.Get()
+	return v
 }
 
 func (e *Object) Message() string {
-	return e.row.StringAt("msg")
+	v, _ := e.msg.Get()
+	return v
 }
 
 func (e *Object) SetMessage(v string) {
-	e.row.SetStringAt("msg", v)
+	e.msg.Set(v)
 }

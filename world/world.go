@@ -95,7 +95,7 @@ func (w *World) Simulate(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
-	// Every systm will run in a separate goroutine
+	// Every system will run in a separate goroutine
 	w.threads.Add(len(w.systems))
 	for _, system := range w.systems {
 		go w.runSystem(ctx, system)

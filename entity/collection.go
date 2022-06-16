@@ -12,11 +12,11 @@ import (
 type Collection[T any] struct {
 	*column.Collection
 	name string
-	read func(*column.Cursor) T
+	read func(*column.Txn) T
 }
 
 // NewCollection creates a new mobile object collection
-func NewCollection[T any](name string, read func(*column.Cursor) T) *Collection[T] {
+func NewCollection[T any](name string, read func(txn *column.Txn) T) *Collection[T] {
 	db := column.NewCollection()
 	db.CreateColumn("id", column.ForKey()) // Unique ID
 	return &Collection[T]{
@@ -27,28 +27,30 @@ func NewCollection[T any](name string, read func(*column.Cursor) T) *Collection[
 }
 
 // Insert inserts a mobile into the collection
-func (c *Collection[T]) Insert(fn func(v T)) (index uint32, err error) {
-	id := xid.New().String()
-	return c.Collection.Insert("id", func(v column.Cursor) error {
-		v.SetString(id)
-		fn(c.read(&v))
-		return nil
+func (c *Collection[T]) Insert(fn func(v T) error) error {
+	return c.Collection.Query(func(txn *column.Txn) error {
+		return txn.InsertKey(xid.New().String(), func(r column.Row) error {
+			return fn(c.read(txn))
+		})
 	})
 }
 
 // Range iterates over all rows that match the specified filter columns
 func (c *Collection[T]) Range(fn func(v T), filters ...string) error {
 	return c.Collection.Query(func(txn *column.Txn) error {
-		return txn.With(filters...).Range("id", func(v column.Cursor) {
-			fn(c.read(&v))
+		cursor := c.read(txn)
+		return txn.With(filters...).Range(func(idx uint32) {
+			fn(cursor)
 		})
 	})
 }
 
 // UpdateAt updates a mobile at a given index
 func (c *Collection[T]) UpdateAt(idx uint32, fn func(v T) error) error {
-	return c.Collection.UpdateAt(idx, "id", func(v column.Cursor) error {
-		return fn(c.read(&v))
+	return c.Query(func(txn *column.Txn) error {
+		return txn.QueryAt(idx, func(r column.Row) error {
+			return fn(c.read(txn))
+		})
 	})
 }
 

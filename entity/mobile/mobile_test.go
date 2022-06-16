@@ -14,9 +14,10 @@ func TestMobile(t *testing.T) {
 	assert.NotNil(t, c)
 
 	// Insert
-	_, err := c.Insert(func(mobile Mobile) {
+	err := c.Insert(func(mobile Mobile) error {
 		mobile.SetLocation(tile.At(1, 1))
 		mobile.SetMovement(state.NewMovement(tile.East, 5, time.Second, 400*time.Millisecond))
+		return nil
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, c.Count())

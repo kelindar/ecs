@@ -31,9 +31,10 @@ func TestTryUpdate(t *testing.T) {
 func newSystem() (*System, *world.World) {
 	system := new(System)
 	world := world.Create(9, 9, system)
-	world.Mobiles.Insert(func(v mobile.Mobile) {
+	world.Mobiles.Insert(func(v mobile.Mobile) error {
 		v.SetMovement(state.NewMovement(tile.West, 5, time.Second, 400*time.Millisecond))
 		v.SetLocation(tile.At(1, 0))
+		return nil
 	})
 	return system, world
 }
