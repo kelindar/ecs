@@ -7,9 +7,9 @@ import (
 )
 
 // System represents a contract that every game system implements
-type System interface {
+type System[T comparable] interface {
 	Interval() time.Duration
-	Attach(*World) error
+	Attach(*World[T]) error
 	Update(*Clock) error
 }
 
@@ -34,7 +34,7 @@ func (c *Clock) Update() {
 }
 
 // nameOf prettifies system name
-func nameOf(system System) string {
+func nameOf[T comparable](system System[T]) string {
 	name := reflect.TypeOf(system).String()
 	name = strings.TrimSuffix(name, ".System")
 	name = strings.TrimPrefix(name, "*")

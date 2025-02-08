@@ -16,20 +16,20 @@ import (
 )
 
 // World represents the entire game world state
-type World struct {
+type World[T comparable] struct {
 	path    string             // The directory for save files
 	cancel  context.CancelFunc // Cancel function to stop everything
 	threads sync.WaitGroup     // Signals for each running system
-	systems []System           // Attached systems
-	Grid    *tile.Grid         // 3072x3072 map
+	systems []System[T]        // Attached systems
+	Grid    *tile.Grid[T]      // 3072x3072 map
 	Mobiles *mobile.Collection // List of mobiles (NPCs, Players, Monsters, ...)
 	Statics *static.Collection // List of objects on the map (Buildings, Trees, ...)
 	Items   *item.Collection   // List of items off map (Weapons, Potions, ...)
 }
 
 // Open opens the world state file, or creates a new one
-func Open(path string, systems ...System) (*World, error) {
-	world := Create(3072, 3072) // Do not specify systems
+func Open[T comparable](path string, systems ...System[T]) (*World[T], error) {
+	world := Create[T](3072, 3072) // Do not specify systems
 	world.path = path
 
 	// Load or create all of the collections
@@ -50,9 +50,9 @@ func Open(path string, systems ...System) (*World, error) {
 }
 
 // Create creates a new empty world
-func Create(width, height int16, systems ...System) *World {
-	world := &World{
-		Grid:    tile.NewGrid(width, height),
+func Create[T comparable](width, height int16, systems ...System[T]) *World[T] {
+	world := &World[T]{
+		Grid:    tile.NewGridOf[T](width, height),
 		Mobiles: mobile.NewCollection(),
 		Statics: static.NewCollection(),
 		Items:   item.NewCollection(),
@@ -66,7 +66,7 @@ func Create(width, height int16, systems ...System) *World {
 }
 
 // Save saves the state of the world
-func (w *World) Save() error {
+func (w *World[T]) Save() error {
 	defer func(start time.Time) {
 		log.Printf("world: save completed (%v)", time.Now().Sub(start))
 	}(time.Now())
@@ -78,7 +78,7 @@ func (w *World) Save() error {
 }
 
 // Register registers all of the systems and atta
-func (w *World) register(systems []System) error {
+func (w *World[T]) register(systems []System[T]) error {
 	w.systems = systems
 	for _, system := range systems {
 		log.Printf("world: attaching %v system", nameOf(system))
@@ -91,7 +91,7 @@ func (w *World) register(systems []System) error {
 
 // Simulate runs the world simulation loop by starting all of the registered
 // systems asynchronously.
-func (w *World) Simulate(ctx context.Context) error {
+func (w *World[T]) Simulate(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
@@ -107,7 +107,7 @@ func (w *World) Simulate(ctx context.Context) error {
 }
 
 // runSystem runs a system
-func (w *World) runSystem(ctx context.Context, system System) {
+func (w *World[T]) runSystem(ctx context.Context, system System[T]) {
 	clock := newClock()
 	timer := time.NewTicker(system.Interval())
 
@@ -132,7 +132,7 @@ func (w *World) runSystem(ctx context.Context, system System) {
 }
 
 // Close saves the state of the world and closes it
-func (w *World) Close() error {
+func (w *World[T]) Close() error {
 	w.threads.Add(1) // Wait for closing
 	if w.cancel != nil {
 		w.cancel()

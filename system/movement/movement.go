@@ -11,11 +11,11 @@ import (
 )
 
 // Assert contract compliance
-var _ world.System = new(System)
+var _ world.System[any] = new(System)
 
 // System represents a system that handles all movement of mobile objects
 type System struct {
-	grid    *tile.Grid
+	grid    *tile.Grid[any]
 	mobiles *mobile.Collection
 }
 
@@ -25,7 +25,7 @@ func (s *System) Interval() time.Duration {
 }
 
 // Attach attaches the system to the world context
-func (s *System) Attach(w *world.World) error {
+func (s *System) Attach(w *world.World[any]) error {
 	s.grid = w.Grid
 	s.mobiles = w.Mobiles
 	s.mobiles.CreateIndex("moving", "move", func(r column.Reader) bool {

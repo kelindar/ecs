@@ -1,20 +1,22 @@
 module github.com/kelindar/ecs
 
-go 1.18
+go 1.23
+
+toolchain go1.23.4
 
 require (
 	github.com/kelindar/column v0.1.0
-	github.com/kelindar/tile v1.2.0
+	github.com/kelindar/tile v1.6.1
 	github.com/rs/xid v1.4.0
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.9.0
 	go.uber.org/multierr v1.8.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kelindar/bitmap v1.4.1 // indirect
-	github.com/kelindar/intmap v1.1.0 // indirect
-	github.com/kelindar/iostream v1.3.0 // indirect
+	github.com/kelindar/intmap v1.4.1 // indirect
+	github.com/kelindar/iostream v1.4.0 // indirect
 	github.com/kelindar/simd v1.1.2 // indirect
 	github.com/kelindar/smutex v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.6 // indirect
