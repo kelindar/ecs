@@ -7,7 +7,7 @@ import (
 )
 
 // Assert contract compliance
-var _ world.System = new(System)
+var _ world.System[any] = new(System)
 
 // System represents a system that handles all movement of mobile objects
 type System struct {
@@ -20,7 +20,7 @@ func (s *System) Interval() time.Duration {
 }
 
 // Attach attaches the system to the world context
-func (s *System) Attach(w *world.World) error {
+func (s *System) Attach(w *world.World[any]) error {
 	s.save = w.Save
 	return nil
 }
